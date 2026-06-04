@@ -58,7 +58,7 @@ if (window.camera) {
     // x: positive moves right, negative moves left
     // y: lower negative numbers pull it further DOWN to the screen edge
     // z: controls depth distance from your eyes (-0.4 keeps it crisp and close)
-    knife.position.set(0.22, 5, -0.4);
+    knife.position.set(0.22, -5, -0.4);
 
     // 3. Nest the knife inside the animated viewmodel parent group
     window.viewmodel.add(knife);
