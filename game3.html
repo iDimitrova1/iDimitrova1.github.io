@@ -3,34 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Parkour Game</title>
+    <title>3D CS-Style Parkour Prototype</title>
     <style>
         body {
             margin: 0;
-            overflow: hidden; /* Stops scrollbars */
-            background-color: #87CEEB; /* Sky blue */
+            overflow: hidden;
+            background-color: #87CEEB;
             font-family: sans-serif;
         }
-        /* The Crosshair in the center of the screen */
         #crosshair {
             position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 20px;
-            height: 20px;
+            top: 50%; left: 50%;
+            width: 20px; height: 20px;
             transform: translate(-50%, -50%);
             pointer-events: none;
-            color: white;
-            font-size: 24px;
+            color: #00ff00; /* Classic CS Green Crosshair */
+            font-size: 28px;
+            font-weight: bold;
             text-align: center;
             line-height: 20px;
             z-index: 10;
         }
-        /* The Start Menu Overlay */
         #menu {
             position: absolute;
             top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(0,0,0,0.7);
+            background: rgba(0,0,0,0.8);
             color: white;
             display: flex;
             flex-direction: column;
@@ -39,205 +36,226 @@
             z-index: 20;
             cursor: pointer;
         }
-        h1 { font-size: 40px; margin-bottom: 10px; }
+        #ui {
+            position: absolute;
+            bottom: 20px; left: 20px;
+            color: #00ff00;
+            font-family: monospace;
+            font-size: 24px;
+            text-shadow: 2px 2px black;
+            z-index: 10;
+        }
+        h1 { font-size: 40px; margin-bottom: 10px; color: #00ff00; }
         p { font-size: 18px; margin-top: 0; }
     </style>
 </head>
 <body>
 
-    <div id="crosshair">+</div>
+    <div id="crosshair">•</div>
+    <div id="ui">SPEED: <span id="speedo">0</span> u/s</div>
     
     <div id="menu">
-        <h1>3D PARKOUR</h1>
-        <p>Click anywhere to start</p>
-        <p style="font-size: 14px; color: #ccc;">WASD to Move | SPACE to Jump | Mouse to Look</p>
+        <h1>KZ PARKOUR PROTOTYPE</h1>
+        <p>Click to Lock Mouse & Play</p>
+        <p style="font-size: 14px; color: #aaa;">Strafe in mid-air (A/D + Mouse Turn) to gain/steer speed!</p>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
 <script>
-// --- 1. BASIC 3D SETUP ---
+// --- 1. SETUP ---
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x87CEEB); // Sky color
-scene.fog = new THREE.Fog(0x87CEEB, 10, 100); // Fades platforms out in the distance
+scene.background = new THREE.Color(0x1a1a2e); // Darker sky for aesthetic
+scene.fog = new THREE.Fog(0x1a1a2e, 20, 150);
 
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-// Lighting
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-scene.add(ambientLight);
+// Lights
+scene.add(new THREE.AmbientLight(0xffffff, 0.4));
 const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-dirLight.position.set(100, 200, 50);
+dirLight.position.set(20, 40, 20);
 scene.add(dirLight);
 
-// --- 2. PLAYER & CAMERA CONTROLS ---
-// We put the camera inside a "pitch" object (looks up/down) 
-// and put that inside a "yaw" object (looks left/right)
-const pitchObject = new THREE.Object3D();
-pitchObject.add(camera);
-const yawObject = new THREE.Object3D();
-yawObject.position.y = 2; // Player height
-yawObject.add(pitchObject);
-scene.add(yawObject);
-
+// --- 2. ENHANCED PHYSICS CONSTANTS ---
 const playerHeight = 2;
 let velocity = new THREE.Vector3();
-let direction = new THREE.Vector3();
 let isGrounded = false;
 let gameStarted = false;
 
-// Movement Inputs
+// CS 1.6 Config Settings
+const GROUND_ACCEL = 0.12;
+const GROUND_FRICTION = 0.82; // Snappy stops on land
+const AIR_ACCEL = 0.08;       // Allows curving and speed generation
+const JUMP_FORCE = 0.32;
+const GRAVITY = 0.014;
+
+// Camera Node Hierarchy
+const pitchObject = new THREE.Object3D();
+pitchObject.add(camera);
+const yawObject = new THREE.Object3D();
+yawObject.position.set(0, playerHeight, 0);
+yawObject.add(pitchObject);
+scene.add(yawObject);
+
+// Input Maps
 const keys = { w: false, a: false, s: false, d: false, space: false };
+let mouseMoveX = 0;
 
-document.addEventListener('keydown', (event) => {
-    switch(event.code) {
-        case 'KeyW': keys.w = true; break;
-        case 'KeyA': keys.a = true; break;
-        case 'KeyS': keys.s = true; break;
-        case 'KeyD': keys.d = true; break;
-        case 'Space': 
-            if (isGrounded) velocity.y = 0.35; // Jump Force
-            break;
-    }
+document.addEventListener('keydown', (e) => {
+    if (e.code === 'KeyW') keys.w = true;
+    if (e.code === 'KeyA') keys.a = true;
+    if (e.code === 'KeyS') keys.s = true;
+    if (e.code === 'KeyD') keys.d = true;
+    if (e.code === 'Space') keys.space = true;
 });
-document.addEventListener('keyup', (event) => {
-    switch(event.code) {
-        case 'KeyW': keys.w = false; break;
-        case 'KeyA': keys.a = false; break;
-        case 'KeyS': keys.s = false; break;
-        case 'KeyD': keys.d = false; break;
-    }
+document.addEventListener('keyup', (e) => {
+    if (e.code === 'KeyW') keys.w = false;
+    if (e.code === 'KeyA') keys.a = false;
+    if (e.code === 'KeyS') keys.s = false;
+    if (e.code === 'KeyD') keys.d = false;
+    if (e.code === 'Space') keys.space = false;
 });
 
-// --- 3. MOUSE LOCK (FPS VIEW) ---
+// --- 3. FPS MOUSE ENGINE ---
 const menu = document.getElementById('menu');
-menu.addEventListener('click', () => {
-    document.body.requestPointerLock();
-});
+const speedo = document.getElementById('speedo');
 
+menu.addEventListener('click', () => document.body.requestPointerLock());
 document.addEventListener('pointerlockchange', () => {
-    if (document.pointerLockElement === document.body) {
-        gameStarted = true;
-        menu.style.display = 'none';
-    } else {
-        gameStarted = false;
-        menu.style.display = 'flex';
-    }
+    gameStarted = document.pointerLockElement === document.body;
+    menu.style.display = gameStarted ? 'none' : 'flex';
 });
 
-document.addEventListener('mousemove', (event) => {
+document.addEventListener('mousemove', (e) => {
     if (!gameStarted) return;
-    const movementX = event.movementX || 0;
-    const movementY = event.movementY || 0;
-
-    yawObject.rotation.y -= movementX * 0.002;
-    pitchObject.rotation.x -= movementY * 0.002;
-    // Stop the camera from flipping upside down
+    mouseMoveX = e.movementX || 0; // Capture horizontal mouse movement for air strafing
+    yawObject.rotation.y -= mouseMoveX * 0.0022;
+    pitchObject.rotation.x -= (e.movementY || 0) * 0.0022;
     pitchObject.rotation.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, pitchObject.rotation.x));
 });
 
-// --- 4. LEVEL DESIGN (PLATFORMS) ---
+// --- 4. MAP TILES ---
 const platforms = [];
-const material = new THREE.MeshLambertMaterial({ color: 0x34a853 }); // Grass green
-const geometry = new THREE.BoxGeometry(1, 1, 1);
-
-function createPlatform(x, y, z, width, depth) {
-    const plat = new THREE.Mesh(geometry, material);
-    plat.scale.set(width, 1, depth);
-    plat.position.set(x, y, z);
-    scene.add(plat);
-    
-    // Store bounding box data for easy collision checking
-    platforms.push({
-        minX: x - width/2, maxX: x + width/2,
-        minZ: z - depth/2, maxZ: z + depth/2,
-        y: y + 0.5 // Top surface of the platform
-    });
+function addBlock(x, y, z, w, d, color=0x4ecca3) {
+    const geo = new THREE.BoxGeometry(1, 1, 1);
+    const mat = new THREE.MeshLambertMaterial({ color: color });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.scale.set(w, 1, d);
+    mesh.position.set(x, y, z);
+    scene.add(mesh);
+    platforms.push({ minX: x-w/2, maxX: x+w/2, minZ: z-d/2, maxZ: z+d/2, topY: y+0.5 });
 }
 
-// Map Layout (Similar to a KZ start)
-createPlatform(0, 0, 0, 10, 10);      // Spawn platform
-createPlatform(0, 1, -12, 6, 6);      // Jump 1 (Slightly higher)
-createPlatform(8, 2, -18, 4, 4);      // Jump 2 (Curve right)
-createPlatform(18, 3, -18, 4, 4);     // Jump 3
-createPlatform(28, 5, -18, 5, 5);     // Jump 4 (Higher up)
-createPlatform(38, 4, -10, 4, 4);     // Jump 5 (Drop down)
-createPlatform(38, 4, 0, 8, 8);       // Final Platform
+// Designing a challenging linear KZ block line
+addBlock(0, 0, 0, 8, 8, 0x3f51b5);     // Spawn
+addBlock(0, 0.5, -12, 3, 3);          // Standard jump
+addBlock(0, 1.5, -22, 2.5, 2.5);      // Higher precision block
+addBlock(7, 2.5, -29, 2, 2);          // Curve right
+addBlock(16, 3.5, -29, 2, 2);         // Long gap (Requires momentum)
+addBlock(24, 2.0, -20, 3, 3);         // Drop down
+addBlock(24, 4.0, -8, 1.5, 1.5);      // Tiny skill pillar
+addBlock(24, 5.5, 4, 6, 6, 0xe91e63);   // Victory Platform
 
 function resetPlayer() {
     yawObject.position.set(0, playerHeight, 0);
     velocity.set(0,0,0);
 }
 
-// --- 5. GAME LOOP & PHYSICS ---
-const speed = 0.04;
-const friction = 0.85;
-const gravity = 0.015;
-
+// --- 5. CS-STYLE MOVEMENT PHYSICS ENGINE ---
 function animate() {
     requestAnimationFrame(animate);
 
     if (gameStarted) {
-        // 1. Friction & Air Resistance
-        velocity.x *= friction;
-        velocity.z *= friction;
-        velocity.y -= gravity; // Apply Gravity
+        // Calculate Intent Direction from Inputs
+        let wishDir = new THREE.Vector3();
+        if (keys.w) wishDir.z -= 1;
+        if (keys.s) wishDir.z += 1;
+        if (keys.a) wishDir.x -= 1;
+        if (keys.d) wishDir.x += 1;
+        wishDir.normalize();
+        wishDir.applyQuaternion(yawObject.quaternion); // Align vector with camera look direction
 
-        // 2. Player Input calculations
-        direction.z = Number(keys.w) - Number(keys.s);
-        direction.x = Number(keys.d) - Number(keys.a);
-        direction.normalize(); // Ensures diagonal movement isn't twice as fast
+        if (isGrounded) {
+            // --- GROUND PHYSICS ---
+            // Apply heavy ground friction
+            velocity.x *= GROUND_FRICTION;
+            velocity.z *= GROUND_FRICTION;
 
-        // Apply movement relative to where the camera is looking
-        if (keys.w || keys.s) {
-            velocity.z -= direction.z * speed * Math.cos(yawObject.rotation.y);
-            velocity.x -= direction.z * speed * Math.sin(yawObject.rotation.y);
-        }
-        if (keys.a || keys.d) {
-            velocity.x -= direction.x * speed * Math.cos(yawObject.rotation.y);
-            velocity.z += direction.x * speed * Math.sin(yawObject.rotation.y);
-        }
+            // Normal acceleration
+            if (wishDir.lengthSq() > 0) {
+                velocity.x += wishDir.x * GROUND_ACCEL;
+                velocity.z += wishDir.z * GROUND_ACCEL;
+            }
 
-        // 3. Update Position
-        yawObject.position.add(velocity);
+            // Continuous jump / Bhop processing
+            if (keys.space) {
+                velocity.y = JUMP_FORCE;
+                isGrounded = false;
+                // BHOP TRICK: Leaving ground ignores friction penalty next frame!
+            }
+        } else {
+            // --- AIR PHYSICS (The CS Core) ---
+            // 1. Zero Horizontal Friction: Velocity is naturally preserved in mid-air.
+            
+            // 2. Air Strafing Math:
+            // If turning mouse left while holding 'A', or right while holding 'D', pump additional speed.
+            if (wishDir.lengthSq() > 0) {
+                // Project current horizontal velocity onto your looking direction vector
+                const currentSpdProj = velocity.x * wishDir.x + velocity.z * wishDir.z;
+                const airSpeedLimit = 0.15; // Soft cap for straight line speed
 
-        // 4. Collision Detection (Checking if player is landing on a platform)
-        isGrounded = false;
-        for (let p of platforms) {
-            // Are we horizontally inside the platform?
-            if (yawObject.position.x > p.minX && yawObject.position.x < p.maxX &&
-                yawObject.position.z > p.minZ && yawObject.position.z < p.maxZ) {
-                
-                // Are we falling, and is our feet right above/on the platform?
-                const playerFeet = yawObject.position.y - playerHeight;
-                if (velocity.y <= 0 && playerFeet <= p.y && playerFeet > p.y - 1) {
-                    velocity.y = 0;
-                    yawObject.position.y = p.y + playerHeight;
-                    isGrounded = true;
+                // If you aren't exceeding the air speed cap in that specific vector, add acceleration
+                if (currentSpdProj < airSpeedLimit) {
+                    velocity.x += wishDir.x * AIR_ACCEL;
+                    velocity.z += wishDir.z * AIR_ACCEL;
                 }
             }
         }
 
-        // 5. Death / Respawn Check
-        if (yawObject.position.y < -10) {
-            resetPlayer();
+        // Apply constant gravity
+        velocity.y -= GRAVITY;
+        yawObject.position.add(velocity);
+
+        // --- ENHANCED INTERSECTION LOGIC ---
+        let wasGroundedThisFrame = false;
+        for (let p of platforms) {
+            if (yawObject.position.x > p.minX && yawObject.position.x < p.maxX &&
+                yawObject.position.z > p.minZ && yawObject.position.z < p.maxZ) {
+                
+                const feetY = yawObject.position.y - playerHeight;
+                // Detection lip buffer expanded slightly to prevent clipping on landing velocities
+                if (velocity.y <= 0 && feetY <= p.topY && feetY > p.topY - 0.8) {
+                    velocity.y = 0;
+                    yawObject.position.y = p.topY + playerHeight;
+                    wasGroundedThisFrame = true;
+                }
+            }
         }
+        isGrounded = wasGroundedThisFrame;
+
+        // Void Defeat Condition
+        if (yawObject.position.y < -15) resetPlayer();
+
+        // Update real-time speedometer UI
+        const horizSpeed = Math.sqrt(velocity.x * velocity.x + velocity.z * velocity.z) * 1000;
+        speedo.innerText = Math.round(horizSpeed);
     }
 
+    // Flush Frame
     renderer.render(scene, camera);
+    mouseMoveX = 0; // Flush rotational delta
 }
 
-// Handle window resizing properly
+// Window Scaling Protection
 window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
-// Start loop
 animate();
 </script>
 </body>
