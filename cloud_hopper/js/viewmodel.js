@@ -12,7 +12,7 @@ textureLoader.load(
     function (texture) {
         // 2. Create a flat 2D plane geometry
         // (Width = 0.4, Height = 0.4. Adjust these to match your image's proportions!)
-        const knifeGeo = new THREE.PlaneGeometry(0.9, 0.9);
+        const knifeGeo = new THREE.PlaneGeometry(2, 2);
 
         // 3. Create a material using basic shading so it stays bright and retro
         const knifeMat = new THREE.MeshBasicMaterial({ 
