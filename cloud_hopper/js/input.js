@@ -12,7 +12,6 @@ window.keys = {
 // --- MOUSE LOCK HANDLER ---
 document.addEventListener('click', () => {
     if (!window.gameStarted) {
-        // Ensure renderer exists before accessing its canvas element
         if (window.renderer && window.renderer.domElement) {
             window.renderer.domElement.requestPointerLock();
         }
@@ -21,14 +20,26 @@ document.addEventListener('click', () => {
 
 // Sync game engine states when mouse lock changes
 document.addEventListener('pointerlockchange', () => {
+    // Safely look for whatever name your HTML text block is using
+    const commonOverlayIDs = ['overlay', 'blocker', 'instructions', 'menu', 'start-screen'];
+    let startTextUI = null;
+    
+    for (const id of commonOverlayIDs) {
+        const element = document.getElementById(id);
+        if (element) {
+            startTextUI = element;
+            break;
+        }
+    }
+
+    // If the browser successfully locked the mouse, hide the starting text
     if (window.renderer && document.pointerLockElement === window.renderer.domElement) {
         window.gameStarted = true;
-        const overlay = document.getElementById('overlay');
-        if (overlay) overlay.style.display = 'none';
+        if (startTextUI) startTextUI.style.display = 'none';
     } else {
+        // If the player hits Escape, pause the logic and bring the text back
         window.gameStarted = false;
-        const overlay = document.getElementById('overlay');
-        if (overlay) overlay.style.display = 'flex';
+        if (startTextUI) startTextUI.style.display = 'flex';
     }
 });
 
