@@ -4,30 +4,29 @@ let viewmodel = new THREE.Group();
 // Attach the empty container to the camera immediately so it tracks head movement
 camera.add(viewmodel);
 
-// 1. Initialize the Texture Loader to read 2D images
+// Initialize the Texture Loader to read 2D images
 const textureLoader = new THREE.TextureLoader();
 
 textureLoader.load(
     'assets/cs16_knife.png', // Path to your transparent PNG
     function (texture) {
-        // 2. Create a flat 2D plane geometry
-        // (Width = 0.4, Height = 0.4. Adjust these to match your image's proportions!)
-        const knifeGeo = new THREE.PlaneGeometry(0.45, 0.45);
+        // ENLARGED BY 50%: Boosted size parameters from 0.45 to 0.675
+        const knifeGeo = new THREE.PlaneGeometry(0.675, 0.675);
 
-        // 3. Create a material using basic shading so it stays bright and retro
         const knifeMat = new THREE.MeshBasicMaterial({ 
             map: texture, 
             transparent: true, // Enables the PNG transparency
-            depthTest: false,  // CRITICAL: Forces the weapon to always draw ON TOP of clouds
+            depthTest: false,  // Forces the weapon to always draw ON TOP of clouds
             depthWrite: false
         });
 
-        // 4. Combine shape and image into a mesh
         const knifeSprite = new THREE.Mesh(knifeGeo, knifeMat);
 
-        // 5. Calibration Positioning
-        // X: push to the right, Y: pull down, Z: place slightly in front of lens
-        knifeSprite.position.set(0.18, -0.16, -0.4); 
+        // --- NEW CENTERED POSITIONING ---
+        // X: Set to 0.0 to lock it perfectly in the horizontal center of the screen
+        // Y: Dropped to -0.22 so the bottom of the larger image rests cleanly at the screen edge
+        // Z: Kept at -0.4 for consistent depth focus
+        knifeSprite.position.set(0.0, -0.22, -0.4); 
 
         // Add the flat mesh to our animated viewmodel group
         viewmodel.add(knifeSprite);
