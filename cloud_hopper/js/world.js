@@ -143,15 +143,15 @@ function manageEndlessClouds(playerZ) {
     // 2. SPAWN LOOP: Keep drawing clouds up to 100 units ahead of the player
    	 while (lastSpawnZ > playerZ - 100) {
         // Increment parameters to build smoothly along the negative Z channel
-        const gap = 13 + Math.random() * 12; // Random jump distance (13 to 18 units)
+        const gap = 20 + Math.random() * 12; // Random jump distance (13 to 18 units)
         lastSpawnZ -= gap;
         
         // Moderate weave left and right so it isn't a perfectly straight line
-        lastSpawnX += (Math.random() - 0.5) * 6;
+        lastSpawnX += (Math.random() - 0.5) * 16;
         lastSpawnX = Math.max(-20, Math.min(20, lastSpawnX)); // Keep within bounds
         
         // Gradual elevation adjustments
-        nextSpawnY += (Math.random() - 0.3) * 1.5;
+        nextSpawnY += (Math.random() - 0.3) * 3.5;
         nextSpawnY = Math.max(-2, Math.min(15, nextSpawnY)); // Prevent drifting too high/low
 
         const width = 8 + Math.random() * 5;
