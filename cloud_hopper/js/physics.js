@@ -2,13 +2,13 @@
 let velocity = new THREE.Vector3();
 let isGrounded = false;
 
-// Upgraded Physics Tuners
-const GROUND_ACCEL = 0.08;     // Boosted from 0.04 for quicker acceleration
-const GROUND_FRICTION = 0.86;  // Adjusted to allow clean momentum slide
-const AIR_ACCEL = 0.025;       // Snappier air strafing adjustments
-const BASE_JUMP_FORCE = 0.22;  // Minimum jump force
-const GRAVITY = 0.009;         // Slightly adjusted gravity curve
-const AIR_SPEED_LIMIT = 0.16;  // Raised max speed limit cap
+// --- DYNAMIC MIDDLE-GROUND TUNERS ---
+const GROUND_ACCEL = 0.06;     // Sweeter pickup speed (between 0.04 and 0.08)
+const GROUND_FRICTION = 0.83;  // Crisp but natural slide deceleration
+const AIR_ACCEL = 0.02;        // Clean, responsive mid-air adjustments
+const BASE_JUMP_FORCE = 0.23;  // Solid base hop height
+const GRAVITY = 0.0085;        // Balanced gravity arc
+const AIR_SPEED_LIMIT = 0.11;  // Controlled horizontal air cap
 
 function resetPlayer() {
     yawObject.position.set(0, playerHeight, 0);
@@ -34,11 +34,10 @@ function updatePhysics() {
         }
 
         if (keys.space) {
-            // Calculate current horizontal speed vector length
             const horizSpeed = Math.sqrt(velocity.x * velocity.x + velocity.z * velocity.z);
             
-            // Dynamic Jump Modifier: running fast multiplies your vertical pop!
-            const jumpBonus = horizSpeed * 0.75; 
+            // Rebalanced jump multiplier for controllable sprint-jumps
+            const jumpBonus = horizSpeed * 0.45; 
             velocity.y = BASE_JUMP_FORCE + jumpBonus;
             
             isGrounded = false;
@@ -53,11 +52,11 @@ function updatePhysics() {
         }
     }
 
-    // Apply Downward Pull
+    // Kinematic updates
     velocity.y -= GRAVITY;
     yawObject.position.add(velocity);
 
-    // Bounding Box Collision Engine
+    // Collision Box Processing
     let wasGroundedThisFrame = false;
     for (let p of platforms) {
         if (yawObject.position.x > p.minX && yawObject.position.x < p.maxX &&
@@ -73,8 +72,8 @@ function updatePhysics() {
     }
     isGrounded = wasGroundedThisFrame;
 
-    // Reset when plunging into the endless ocean
-    if (yawObject.position.y < -15) {
+    // Reset loop if plunging into the waves
+    if (yawObject.position.y < -12) {
         resetPlayer();
     }
 }
