@@ -47,7 +47,7 @@ if (window.camera) {
     
     // Make the weapon bigger as requested
     // Increase these three numbers together if you want it even larger!
-    knife.scale.set(1.8, 1.8, 1.8);
+    knife.scale.set(2.6, 2.6, 2.6);
 
     // Rotate the blade so it tilts forward like an FPS viewpoint weapon
     knife.rotation.x = Math.PI / 3.5;  // Lean forward
@@ -58,7 +58,7 @@ if (window.camera) {
     // x: positive moves right, negative moves left
     // y: lower negative numbers pull it further DOWN to the screen edge
     // z: controls depth distance from your eyes (-0.4 keeps it crisp and close)
-    knife.position.set(0.22, -0.2, -0.4);
+    knife.position.set(0.22, 2, -0.4);
 
     // 3. Nest the knife inside the animated viewmodel parent group
     window.viewmodel.add(knife);
