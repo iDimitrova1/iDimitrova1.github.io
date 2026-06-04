@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2D Side-Scroller Jumper</title>
+    <style>
+        body {
+            margin: 0;
+            background: #222;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            color: white;
+            font-family: sans-serif;
+            flex-direction: column;
+        }
+        canvas {
+            border: 4px solid #fff;
+            background: #4a90e2; /* Fallback background color */
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+        }
+        .instructions {
+            margin-top: 15px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="gameCanvas" width="800" height="400"></canvas>
+    <div class="instructions">
+        <p>Press <strong>SPACEBAR</strong> or <strong>UP ARROW</strong> to Jump</p>
+        <p>Score points by clearing obstacles!</p>
+    </div>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+// --- CUSTOM TEXTURE LOADING ---
+// Replace the URLs below with your own image file paths (e.g., "images/player.png")
+const textures = {
+    background: new Image(),
+    player: new Image(),
+    obstacle: new Image(),
+    ground: new Image()
+};
+
+textures.background.src = 'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?q=80&w=800&auto=format&fit=crop'; // Placeholder gradient
+textures.player.src = '';    // Put your player image URL here
+textures.obstacle.src = '';  // Put your obstacle image URL here
+textures.ground.src = '';    // Put your ground image URL here
+
+// Helper function to safely draw texture or fallback to color
+function drawSprite(img, x, y, width, height, fallbackColor) {
+    if (img.src && img.complete && img.naturalWidth !== 0) {
+        ctx.drawImage(img, x, y, width, height);
+    } else {
+        ctx.fillStyle = fallbackColor;
+        ctx.fillRect(x, y, width, height);
+    }
+}
+
+// --- GAME VARIABLES ---
+const gravity = 0.6;
+let score = 0;
+let gameOver = false;
+let gameSpeed = 5;
+
+// Player Object
+const player = {
+    x: 100,
+    y: 300,
+    width: 50,
+    height: 60,
+    velocityY: 0,
+    isGrounded: false,
+    jumpForce: 13
+};
+
+// Ground Object
+const ground = {
+    x: 0,
+    y: 350,
+    width: canvas.width,
+    height: 50
+};
+
+// Obstacles Array
+let obstacles = [];
+let spawnTimer = 0;
+
+// --- INPUTS ---
+const keys = {};
+window.addEventListener('keydown', (e) => {
+    if ((e.code === 'Space' || e.code === 'ArrowUp') && player.isGrounded && !gameOver) {
+        player.velocityY = -player.jumpForce;
+        player.isGrounded = false;
+    }
+    if (gameOver && e.code === 'Space') {
+        resetGame();
+    }
+});
+
+// --- GAME LOGIC ---
+function spawnObstacle() {
+    spawnTimer++;
+    if (spawnTimer > Math.random() * 60 + 90) { // Random timing between spawns
+        const height = Math.random() * 40 + 40; // Random heights
+        obstacles.push({
+            x: canvas.width,
+            y: ground.y - height,
+            width: 30,
+            height: height
+        });
+        spawnTimer = 0;
+    }
+}
+
+function update() {
+    if (gameOver) return;
+
+    // Apply Gravity
+    player.velocityY += gravity;
+    player.y += player.velocityY;
+
+    // Ground Collision
+    if (player.y + player.height >= ground.y) {
+        player.y = ground.y - player.height;
+        player.velocityY = 0;
+        player.isGrounded = true;
+    }
+
+    // Move & Update Obstacles
+    for (let i = obstacles.length - 1; i >= 0; i--) {
+        obstacles[i].x -= gameSpeed;
+
+        // Collision Detection (AABB)
+        if (
+            player.x < obstacles[i].x + obstacles[i].width &&
+            player.x + player.width > obstacles[i].x &&
+            player.y < obstacles[i].y + obstacles[i].height &&
+            player.y + player.height > obstacles[i].y
+        ) {
+            gameOver = true;
+        }
+
+        // Score tracking
+        if (obstacles[i].x + obstacles[i].width < player.x && !obstacles[i].scored) {
+            score++;
+            obstacles[i].scored = true;
+            // Gradually speed up the game
+            if (score % 5 === 0) gameSpeed += 0.5;
+        }
+
+        // Remove old obstacles
+        if (obstacles[i].x + obstacles[i].width < 0) {
+            obstacles.splice(i, 1);
+        }
+    }
+
+    spawnObstacle();
+}
+
+function draw() {
+    // Clear Canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // 1. Draw Background
+    drawSprite(textures.background, 0, 0, canvas.width, canvas.height, '#4a90e2');
+
+    // 2. Draw Ground
+    drawSprite(textures.ground, ground.x, ground.y, ground.width, ground.height, '#34a853');
+
+    // 3. Draw Player
+    drawSprite(textures.player, player.x, player.y, player.width, player.height, '#ff4757');
+
+    // 4. Draw Obstacles
+    obstacles.forEach(obs => {
+        drawSprite(textures.obstacle, obs.x, obs.y, obs.width, obs.height, '#ffa502');
+    });
+
+    // 5. Draw Score
+    ctx.fillStyle = 'white';
+    ctx.font = '24px sans-serif';
+    ctx.fillText(`Score: ${score}`, 20, 40);
+
+    // Game Over Overlay
+    if (gameOver) {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        ctx.fillStyle = 'white';
+        ctx.font = '40px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('GAME OVER', canvas.width / 2, canvas.height / 2 - 10);
+        
+        ctx.font = '20px sans-serif';
+        ctx.fillText('Press SPACEBAR to Restart', canvas.width / 2, canvas.height / 2 + 30);
+        ctx.textAlign = 'start'; // Reset alignment
+    }
+}
+
+function resetGame() {
+    obstacles = [];
+    score = 0;
+    gameSpeed = 5;
+    gameOver = false;
+    player.y = ground.y - player.height;
+}
+
+// Main Loop
+function gameLoop() {
+    update();
+    draw();
+    requestAnimationFrame(gameLoop);
+}
+
+gameLoop();
+</script>
+</body>
+</html>
