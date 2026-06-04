@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Floating Islands Platformer</title>
+    <title>Floating Islands Platformer (Solvable!)</title>
     <style>
         body {
             margin: 0;
@@ -18,7 +18,7 @@
         }
         canvas {
             border: 4px solid #fff;
-            background: #87CEEB; /* Light blue sky */
+            background: #87CEEB;
             box-shadow: 0 10px 20px rgba(0,0,0,0.5);
         }
         .instructions {
@@ -32,7 +32,7 @@
     <canvas id="gameCanvas" width="800" height="400"></canvas>
     <div class="instructions">
         <p>Use <strong>LEFT / RIGHT ARROWS</strong> to Move | Press <strong>SPACEBAR</strong> or <strong>UP ARROW</strong> to Jump</p>
-        <p>Don't fall into the void!</p>
+        <p>Every jump is now 100% mathematically possible!</p>
     </div>
 
 <script>
@@ -43,7 +43,6 @@ const ctx = canvas.getContext('2d');
 const gravity = 0.6;
 let score = 0;
 let gameOver = false;
-let cameraX = 0;
 
 // Player Object
 const player = {
@@ -62,11 +61,7 @@ const player = {
 let platforms = [];
 
 // --- INPUTS ---
-const keys = {
-    right: false,
-    left: false,
-    up: false
-};
+const keys = { right: false, left: false };
 
 window.addEventListener('keydown', (e) => {
     if (e.code === 'ArrowRight') keys.right = true;
@@ -85,18 +80,41 @@ window.addEventListener('keyup', (e) => {
     if (e.code === 'ArrowLeft') keys.left = false;
 });
 
-// --- LEVEL GENERATION ---
-function generatePlatform(startX) {
-    const minWidth = 80;
+// --- MATHEMATICALLY GUARANTEED LEVEL GENERATION ---
+function generatePlatform(lastPlat) {
+    const minWidth = 100;
     const maxWidth = 200;
-    const gap = Math.random() * 80 + 40; // Gap between platforms
     const width = Math.random() * (maxWidth - minWidth) + minWidth;
     
-    // Random height between 150 and 350
-    const y = Math.random() * 200 + 150; 
+    // 1. Calculate a safe height change relative to the last platform
+    // Max step up: -60px (well below player's ~120px max vertical reach)
+    // Max step down: +80px
+    let changeY = (Math.random() * 140) - 60; 
+    let y = lastPlat.y + changeY;
+
+    // Constrain absolute heights so platforms don't go off the top or bottom screens
+    if (y < 130) y = 130;
+    if (y > 320) y = 320;
+    
+    // Recalculate true changeY after clamping
+    changeY = y - lastPlat.y;
+
+    // 2. Adjust maximum allowed gap based on height change
+    let maxGap = 140; // Default flat gap (Player max speed allows up to ~240, so this is comfortable)
+    
+    if (changeY < 0) {
+        // If jumping UP, make the gap smaller the higher they have to go
+        maxGap = 90; 
+    } else {
+        // If jumping DOWN, gravity helps, so the gap can be slightly wider
+        maxGap = 170;
+    }
+
+    const minGap = 50;
+    const gap = Math.random() * (maxGap - minGap) + minGap;
 
     platforms.push({
-        x: startX + gap,
+        x: lastPlat.x + lastPlat.width + gap,
         y: y,
         width: width,
         height: 20
@@ -105,14 +123,13 @@ function generatePlatform(startX) {
 
 function initLevel() {
     platforms = [];
-    // Starting platform right underneath the player
-    platforms.push({ x: 50, y: 300, width: 200, height: 20 });
+    // Safe starter platform right under the player
+    const basePlat = { x: 50, y: 280, width: 220, height: 20 };
+    platforms.push(basePlat);
     
-    // Generate initial platforms
-    let lastX = 250;
+    // Chain-generate the initial set of platforms relative to one another
     for (let i = 0; i < 5; i++) {
-        generatePlatform(lastX);
-        lastX = platforms[platforms.length - 1].x + platforms[platforms.length - 1].width;
+        generatePlatform(platforms[platforms.length - 1]);
     }
 }
 
@@ -127,19 +144,16 @@ function update() {
 
     player.x += player.vx;
 
-    // Camera Scrolling (Push platforms back if player goes past center)
+    // Camera Scrolling (Keep player centered horizontally)
     if (player.x > canvas.width / 2) {
         const offset = player.x - (canvas.width / 2);
-        player.x = canvas.width / 2; // Keep player in middle
+        player.x = canvas.width / 2;
         
-        // Move all platforms left
         platforms.forEach(plat => plat.x -= offset);
-        
-        // Increase score based on distance traveled
         score += Math.floor(offset / 10);
     }
 
-    // Block player from going off the left edge of the screen
+    // Stop player from running off left edge
     if (player.x < 0) player.x = 0;
 
     // Apply Gravity
@@ -149,13 +163,12 @@ function update() {
 
     // Platform Collisions
     platforms.forEach(plat => {
-        // Simple AABB Collision Detection
         if (player.x < plat.x + plat.width && 
             player.x + player.width > plat.x &&
             player.y < plat.y + plat.height && 
             player.y + player.height > plat.y) {
             
-            // Only land if falling downwards onto the platform
+            // Only land if moving downwards and above the platform lip
             if (player.vy > 0 && player.y + player.height - player.vy <= plat.y + 10) {
                 player.y = plat.y - player.height;
                 player.vy = 0;
@@ -164,36 +177,34 @@ function update() {
         }
     });
 
-    // Generate new platforms as old ones go off screen
+    // Generate new platform as the furthest one scrolls into view
     const lastPlat = platforms[platforms.length - 1];
     if (lastPlat.x < canvas.width + 100) {
-        generatePlatform(lastPlat.x + lastPlat.width);
+        generatePlatform(lastPlat);
     }
 
-    // Clean up platforms that have gone too far left
+    // Performance clean up for offscreen left platforms
     if (platforms[0].x + platforms[0].width < -200) {
         platforms.shift();
     }
 
-    // Death Condition (Falling off screen)
+    // Death Condition
     if (player.y > canvas.height) {
         gameOver = true;
     }
 }
 
 function draw() {
-    // Clear Canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Draw Platforms (Floating Islands)
-    ctx.fillStyle = '#34a853'; // Grass color
+    // Draw Platforms (Floating Islands with a simple layered look)
     platforms.forEach(plat => {
-        // Draw grass top
+        // Grass top
+        ctx.fillStyle = '#34a853';
         ctx.fillRect(plat.x, plat.y, plat.width, plat.height);
-        // Draw dirt bottom
+        // Dirt bottom
         ctx.fillStyle = '#8B4513';
-        ctx.fillRect(plat.x, plat.y + 5, plat.width, plat.height + 15);
-        ctx.fillStyle = '#34a853'; // reset to grass
+        ctx.fillRect(plat.x, plat.y + 6, plat.width, plat.height + 14);
     });
 
     // Draw Player
@@ -202,7 +213,7 @@ function draw() {
 
     // Draw Score
     ctx.fillStyle = 'black';
-    ctx.font = '24px sans-serif';
+    ctx.font = 'bold 22px sans-serif';
     ctx.fillText(`Distance: ${score}`, 20, 40);
 
     // Game Over Overlay
@@ -231,7 +242,7 @@ function resetGame() {
     initLevel();
 }
 
-// Start Game
+// Start Game Loop
 initLevel();
 function gameLoop() {
     update();
