@@ -1,3 +1,7 @@
+// Top of js/input.js
+let gameStarted = false;
+const keys = { w: false, a: false, s: false, d: false, space: false };
+// ... rest of your input handling code
 // Global Input State
 const keys = { w: false, a: false, s: false, d: false, space: false };
 let gameStarted = false;
