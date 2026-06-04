@@ -1,5 +1,5 @@
 /* Общи настройки */
-body { margin: 0; background-color: #121212; color: #ffffff; font-family: 'Segoe UI', sans-serif; font-size: 12px; }
+body { margin: 0; background-color: #121212; color: #ffffff; font-family: 'Segoe UI', sans-serif; }
 
 /* Меню */
 nav { display: flex; justify-content: space-between; padding: 20px 50px; background: #1e1e1e; }
