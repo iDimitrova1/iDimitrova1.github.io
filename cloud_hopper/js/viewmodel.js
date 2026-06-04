@@ -1,49 +1,38 @@
-if (window.camera) {
+// Global container for the weapon viewmodel
+let viewmodel = new THREE.Group();
 
-    // 1. Create the Parent Container (Handles the walking bobbing animations)
-    window.viewmodel = new THREE.Group();
-    window.camera.add(window.viewmodel);
+// Attach the empty container to the camera immediately so it tracks head movement
+camera.add(viewmodel);
 
-    // 2. Set up the Texture Loader to pull from your assets folder
-    const textureLoader = new THREE.TextureLoader();
-    
-    // 📁 CHANGE 'knife.png' to your exact filename if it is different!
-    const knifeTexture = textureLoader.load('assets/cs1.6_knife.png', 
-        function(texture) {
-            console.log("Knife image loaded perfectly from assets!");
-        },
-        undefined,
-        function(err) {
-            console.error("Could not find your knife image. Check your assets folder filename!");
-        }
-    );
+// Initialize the Texture Loader to read 2D images
+const textureLoader = new THREE.TextureLoader();
 
-    // Keeps the pixels crisp and sharp if it's a low-res retro image
-    knifeTexture.magFilter = THREE.NearestFilter;
-    knifeTexture.minFilter = THREE.LinearFilter;
+textureLoader.load(
+    'assets/cs16_knife.png', // Path to your transparent PNG
+    function (texture) {
+        // ENLARGED BY 50%: Boosted size parameters from 0.45 to 0.675
+        const knifeGeo = new THREE.PlaneGeometry(0.675, 0.675);
 
-    // 3. Create a flat plane (quad) to project your 2D image onto
-    // Adjust these two numbers to make the weapon wider or taller on screen
-    const spriteWidth = 0.35;
-    const spriteHeight = 0.35;
-    const knifeGeo = new THREE.PlaneGeometry(spriteWidth, spriteHeight);
+        const knifeMat = new THREE.MeshBasicMaterial({ 
+            map: texture, 
+            transparent: true, // Enables the PNG transparency
+            depthTest: false,  // Forces the weapon to always draw ON TOP of clouds
+            depthWrite: false
+        });
 
-    // 4. Map the texture with transparency enabled
-    const knifeMat = new THREE.MeshBasicMaterial({
-        map: knifeTexture,
-        transparent: true,   // Crucial! Makes the invisible background of your PNG see-through
-        depthWrite: false,   // Prevents the image's invisible corners from clipping through clouds
-        depthTest: true
-    });
+        const knifeSprite = new THREE.Mesh(knifeGeo, knifeMat);
 
-    const knifeMesh = new THREE.Mesh(knifeGeo, knifeMat);
+        // --- NEW CENTERED POSITIONING ---
+        // X: Set to 0.0 to lock it perfectly in the horizontal center of the screen
+        // Y: Dropped to -0.22 so the bottom of the larger image rests cleanly at the screen edge
+        // Z: Kept at -0.4 for consistent depth focus
+        knifeSprite.position.set(0.0, -0.22, -0.4); 
 
-    // 5. POSITIONING GRID (Dead-Center & Bottom-Up)
-    // x = 0.0   -> Perfect horizontal center alignment
-    // y = -0.18 -> Sunk just enough so the bottom edge of the image hides below the screen
-    // z = -0.4  -> Kept close to your eyes so it stays in clear view
-    knifeMesh.position.set(0.0, -0.18, -0.4);
-
-    // Add the flat image mesh into our animated viewmodel group
-    window.viewmodel.add(knifeMesh);
-}
+        // Add the flat mesh to our animated viewmodel group
+        viewmodel.add(knifeSprite);
+    },
+    undefined,
+    function (error) {
+        console.error('Error loading the knife image sprite:', error);
+    }
+);
