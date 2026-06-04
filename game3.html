@@ -3,31 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D CS-Style Parkour Prototype</title>
+    <title>3D Cloud Parkour Game</title>
     <style>
         body {
             margin: 0;
             overflow: hidden;
-            background-color: #87CEEB;
+            background-color: #aaccff; /* Soft pastel sky blue */
             font-family: sans-serif;
         }
         #crosshair {
             position: absolute;
             top: 50%; left: 50%;
-            width: 20px; height: 20px;
+            width: 10px; height: 10px;
             transform: translate(-50%, -50%);
             pointer-events: none;
-            color: #00ff00; /* Classic CS Green Crosshair */
-            font-size: 28px;
-            font-weight: bold;
-            text-align: center;
-            line-height: 20px;
+            background: rgba(255, 255, 255, 0.8);
+            border: 2px solid #333;
+            border-radius: 50%;
             z-index: 10;
         }
         #menu {
             position: absolute;
             top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(0,0,0,0.8);
+            background: rgba(40, 50, 70, 0.75);
             color: white;
             display: flex;
             flex-direction: column;
@@ -39,25 +37,25 @@
         #ui {
             position: absolute;
             bottom: 20px; left: 20px;
-            color: #00ff00;
+            color: white;
             font-family: monospace;
             font-size: 24px;
-            text-shadow: 2px 2px black;
+            text-shadow: 2px 2px #333;
             z-index: 10;
         }
-        h1 { font-size: 40px; margin-bottom: 10px; color: #00ff00; }
+        h1 { font-size: 44px; margin-bottom: 10px; text-shadow: 2px 2px #222; }
         p { font-size: 18px; margin-top: 0; }
     </style>
 </head>
 <body>
 
-    <div id="crosshair">•</div>
+    <div id="crosshair"></div>
     <div id="ui">SPEED: <span id="speedo">0</span> u/s</div>
     
     <div id="menu">
-        <h1>KZ PARKOUR PROTOTYPE</h1>
-        <p>Click to Lock Mouse & Play</p>
-        <p style="font-size: 14px; color: #aaa;">Strafe in mid-air (A/D + Mouse Turn) to gain/steer speed!</p>
+        <h1>CLOUD HOPPER</h1>
+        <p>Click anywhere to start jumping</p>
+        <p style="font-size: 14px; color: #ddd;">WASD to Move | SPACE to Jump | Mouse to Look</p>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -65,34 +63,34 @@
 <script>
 // --- 1. SETUP ---
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x1a1a2e); // Darker sky for aesthetic
-scene.fog = new THREE.Fog(0x1a1a2e, 20, 150);
+scene.background = new THREE.Color(0xaaccff); 
+scene.fog = new THREE.FogExp2(0xaaccff, 0.015); // Fog makes transitions look smooth
 
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-// Lights
-scene.add(new THREE.AmbientLight(0xffffff, 0.4));
-const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-dirLight.position.set(20, 40, 20);
+// Smooth, bright lighting for a clean cloud look
+scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+dirLight.position.set(40, 80, 40);
 scene.add(dirLight);
 
-// --- 2. ENHANCED PHYSICS CONSTANTS ---
-const playerHeight = 2;
+// --- 2. FLOATIER PHYSICS CONSTANTS (SLOWER SPEED) ---
+const playerHeight = 1.8;
 let velocity = new THREE.Vector3();
 let isGrounded = false;
 let gameStarted = false;
 
-// CS 1.6 Config Settings
-const GROUND_ACCEL = 0.12;
-const GROUND_FRICTION = 0.82; // Snappy stops on land
-const AIR_ACCEL = 0.08;       // Allows curving and speed generation
-const JUMP_FORCE = 0.32;
-const GRAVITY = 0.014;
+// Slower tuning values
+const GROUND_ACCEL = 0.04;    // Cut down from 0.12 (Much slower startup)
+const GROUND_FRICTION = 0.80; // Smooth braking
+const AIR_ACCEL = 0.015;      // Slower air drift control
+const JUMP_FORCE = 0.22;      // Lowered to match the softer gravity
+const GRAVITY = 0.008;        // Floatier, slower downward fall
+const AIR_SPEED_LIMIT = 0.07; // Caps straight line air speeds tightly
 
-// Camera Node Hierarchy
 const pitchObject = new THREE.Object3D();
 pitchObject.add(camera);
 const yawObject = new THREE.Object3D();
@@ -100,9 +98,7 @@ yawObject.position.set(0, playerHeight, 0);
 yawObject.add(pitchObject);
 scene.add(yawObject);
 
-// Input Maps
 const keys = { w: false, a: false, s: false, d: false, space: false };
-let mouseMoveX = 0;
 
 document.addEventListener('keydown', (e) => {
     if (e.code === 'KeyW') keys.w = true;
@@ -119,11 +115,12 @@ document.addEventListener('keyup', (e) => {
     if (e.code === 'Space') keys.space = false;
 });
 
-// --- 3. FPS MOUSE ENGINE ---
+// --- 3. MOUSE CAPTURE ---
 const menu = document.getElementById('menu');
 const speedo = document.getElementById('speedo');
 
 menu.addEventListener('click', () => document.body.requestPointerLock());
+document.pointerLockElement = null;
 document.addEventListener('pointerlockchange', () => {
     gameStarted = document.pointerLockElement === document.body;
     menu.style.display = gameStarted ? 'none' : 'flex';
@@ -131,102 +128,114 @@ document.addEventListener('pointerlockchange', () => {
 
 document.addEventListener('mousemove', (e) => {
     if (!gameStarted) return;
-    mouseMoveX = e.movementX || 0; // Capture horizontal mouse movement for air strafing
-    yawObject.rotation.y -= mouseMoveX * 0.0022;
-    pitchObject.rotation.x -= (e.movementY || 0) * 0.0022;
+    yawObject.rotation.y -= (e.movementX || 0) * 0.002;
+    pitchObject.rotation.x -= (e.movementY || 0) * 0.002;
     pitchObject.rotation.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, pitchObject.rotation.x));
 });
 
-// --- 4. MAP TILES ---
+// --- 4. PROCEDURAL CLOUD PLATFORM GENERATOR ---
 const platforms = [];
-function addBlock(x, y, z, w, d, color=0x4ecca3) {
-    const geo = new THREE.BoxGeometry(1, 1, 1);
-    const mat = new THREE.MeshLambertMaterial({ color: color });
-    const mesh = new THREE.Mesh(geo, mat);
-    mesh.scale.set(w, 1, d);
-    mesh.position.set(x, y, z);
-    scene.add(mesh);
-    platforms.push({ minX: x-w/2, maxX: x+w/2, minZ: z-d/2, maxZ: z+d/2, topY: y+0.5 });
+
+function addCloudPlatform(x, y, z, width, depth) {
+    const cloudGroup = new THREE.Group();
+    const cloudMat = new THREE.MeshLambertMaterial({ 
+        color: 0xffffff, 
+        roughness: 0.9,
+        flatShading: true // Gives a cool low-poly stylized cloud look
+    });
+
+    // Generate clusters of overlapping spheres to shape a cloud
+    const sphereCount = Math.floor((width * depth) / 3) + 5;
+    
+    for (let i = 0; i < sphereCount; i++) {
+        // Vary the sizes of the cloud puffs
+        const radius = 1.0 + Math.random() * 1.2;
+        const geo = new THREE.SphereGeometry(radius, 8, 8);
+        const mesh = new THREE.Mesh(geo, cloudMat);
+
+        // Spread them across the platform scale bounds
+        const offsetX = (Math.random() - 0.5) * (width - 1.5);
+        const offsetZ = (Math.random() - 0.5) * (depth - 1.5);
+        // Keep the top layer relatively unified so walking feels level
+        const offsetY = (Math.random() - 0.6) * 0.5;
+
+        mesh.position.set(offsetX, offsetY, offsetZ);
+        cloudGroup.add(mesh);
+    }
+
+    cloudGroup.position.set(x, y, z);
+    scene.add(cloudGroup);
+
+    // Save accurate flat boundary boxes for smooth clipping/physics
+    platforms.push({ 
+        minX: x - width/2, maxX: x + width/2, 
+        minZ: z - depth/2, maxZ: z + depth/2, 
+        topY: y + 0.4 // Accurate step position right on top of puffs
+    });
 }
 
-// Designing a challenging linear KZ block line
-addBlock(0, 0, 0, 8, 8, 0x3f51b5);     // Spawn
-addBlock(0, 0.5, -12, 3, 3);          // Standard jump
-addBlock(0, 1.5, -22, 2.5, 2.5);      // Higher precision block
-addBlock(7, 2.5, -29, 2, 2);          // Curve right
-addBlock(16, 3.5, -29, 2, 2);         // Long gap (Requires momentum)
-addBlock(24, 2.0, -20, 3, 3);         // Drop down
-addBlock(24, 4.0, -8, 1.5, 1.5);      // Tiny skill pillar
-addBlock(24, 5.5, 4, 6, 6, 0xe91e63);   // Victory Platform
+// Map Layout - Much larger surfaces (e.g. 14x14) and safe comfortable gaps
+addCloudPlatform(0, 0, 0, 15, 15);         // Huge starting zone
+addCloudPlatform(0, 0.5, -16, 12, 12);     // Straight forward, big target
+addCloudPlatform(12, 1.5, -28, 10, 10);    // Diagonal right
+addCloudPlatform(26, 2.0, -28, 11, 11);    // Level path gap
+addCloudPlatform(26, 3.0, -12, 10, 10);    // Turn backward-left
+addCloudPlatform(10, 4.0, -4, 12, 12);     // High cloud climb
+addCloudPlatform(-4, 5.0, -4, 14, 14);     // Final massive golden cloud platform
 
 function resetPlayer() {
     yawObject.position.set(0, playerHeight, 0);
     velocity.set(0,0,0);
 }
 
-// --- 5. CS-STYLE MOVEMENT PHYSICS ENGINE ---
+// --- 5. LOOP AND ENGINE RUNNER ---
 function animate() {
     requestAnimationFrame(animate);
 
     if (gameStarted) {
-        // Calculate Intent Direction from Inputs
         let wishDir = new THREE.Vector3();
         if (keys.w) wishDir.z -= 1;
         if (keys.s) wishDir.z += 1;
         if (keys.a) wishDir.x -= 1;
         if (keys.d) wishDir.x += 1;
         wishDir.normalize();
-        wishDir.applyQuaternion(yawObject.quaternion); // Align vector with camera look direction
+        wishDir.applyQuaternion(yawObject.quaternion);
 
         if (isGrounded) {
-            // --- GROUND PHYSICS ---
-            // Apply heavy ground friction
             velocity.x *= GROUND_FRICTION;
             velocity.z *= GROUND_FRICTION;
 
-            // Normal acceleration
             if (wishDir.lengthSq() > 0) {
                 velocity.x += wishDir.x * GROUND_ACCEL;
                 velocity.z += wishDir.z * GROUND_ACCEL;
             }
 
-            // Continuous jump / Bhop processing
             if (keys.space) {
                 velocity.y = JUMP_FORCE;
                 isGrounded = false;
-                // BHOP TRICK: Leaving ground ignores friction penalty next frame!
             }
         } else {
-            // --- AIR PHYSICS (The CS Core) ---
-            // 1. Zero Horizontal Friction: Velocity is naturally preserved in mid-air.
-            
-            // 2. Air Strafing Math:
-            // If turning mouse left while holding 'A', or right while holding 'D', pump additional speed.
+            // Air logic preserves vector momentum but lets you turn slowly
             if (wishDir.lengthSq() > 0) {
-                // Project current horizontal velocity onto your looking direction vector
                 const currentSpdProj = velocity.x * wishDir.x + velocity.z * wishDir.z;
-                const airSpeedLimit = 0.15; // Soft cap for straight line speed
-
-                // If you aren't exceeding the air speed cap in that specific vector, add acceleration
-                if (currentSpdProj < airSpeedLimit) {
+                if (currentSpdProj < AIR_SPEED_LIMIT) {
                     velocity.x += wishDir.x * AIR_ACCEL;
                     velocity.z += wishDir.z * AIR_ACCEL;
                 }
             }
         }
 
-        // Apply constant gravity
+        // Apply custom slow gravity loop
         velocity.y -= GRAVITY;
         yawObject.position.add(velocity);
 
-        // --- ENHANCED INTERSECTION LOGIC ---
+        // Ground check
         let wasGroundedThisFrame = false;
         for (let p of platforms) {
             if (yawObject.position.x > p.minX && yawObject.position.x < p.maxX &&
                 yawObject.position.z > p.minZ && yawObject.position.z < p.maxZ) {
                 
                 const feetY = yawObject.position.y - playerHeight;
-                // Detection lip buffer expanded slightly to prevent clipping on landing velocities
                 if (velocity.y <= 0 && feetY <= p.topY && feetY > p.topY - 0.8) {
                     velocity.y = 0;
                     yawObject.position.y = p.topY + playerHeight;
@@ -236,20 +245,17 @@ function animate() {
         }
         isGrounded = wasGroundedThisFrame;
 
-        // Void Defeat Condition
-        if (yawObject.position.y < -15) resetPlayer();
+        // Reset if you fall past clouds into space
+        if (yawObject.position.y < -20) resetPlayer();
 
-        // Update real-time speedometer UI
+        // Speed UI display
         const horizSpeed = Math.sqrt(velocity.x * velocity.x + velocity.z * velocity.z) * 1000;
         speedo.innerText = Math.round(horizSpeed);
     }
 
-    // Flush Frame
     renderer.render(scene, camera);
-    mouseMoveX = 0; // Flush rotational delta
 }
 
-// Window Scaling Protection
 window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
