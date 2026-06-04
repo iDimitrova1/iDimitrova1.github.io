@@ -1,5 +1,4 @@
 // --- GLOBAL ENGINE INJECTIONS ---
-// Attaching these directly to the window object ensures cross-file visibility for main.js
 window.scene = new THREE.Scene();
 scene.background = new THREE.Color(0xaaccff); 
 scene.fog = new THREE.FogExp2(0xaaccff, 0.007);
@@ -15,7 +14,7 @@ const dirLight = new THREE.DirectionalLight(0xffffff, 0.9);
 dirLight.position.set(100, 150, 50);
 scene.add(dirLight);
 
-// Globalize Player Perspective Objects for physics.js and main.js tracking
+// Globalize Player Perspective Objects
 window.playerHeight = 1.8;
 window.pitchObject = new THREE.Object3D();
 pitchObject.add(camera);
@@ -38,37 +37,6 @@ window.addEventListener('resize', () => {
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
 });
-
-// --- PERFORMANCE OPTIMIZED LOW-POLY OCEAN ---
-const oceanGeo = new THREE.PlaneGeometry(600, 600, 30, 30);
-const oceanMat = new THREE.MeshStandardMaterial({ 
-    color: 0x0044ff,
-    roughness: 0.2,
-    metalness: 0.1,
-    transparent: true,
-    opacity: 0.85,
-    flatShading: true
-});
-const ocean = new THREE.Mesh(oceanGeo, oceanMat);
-ocean.rotation.x = -Math.PI / 2;
-ocean.position.y = -13;   
-scene.add(ocean);
-
-window.updateOceanWaves = function(time, playerX, playerZ) {
-    ocean.position.x = playerX;
-    ocean.position.z = playerZ;
-
-    const posAttr = oceanGeo.attributes.position;
-    for (let i = 0; i < posAttr.count; i++) {
-        const worldX = posAttr.getX(i) + playerX;
-        const worldZ = posAttr.getY(i) + playerZ;
-        const swell1 = Math.sin(worldX * 0.05 + time * 1.2) * 0.6;
-        const swell2 = Math.cos(worldZ * 0.05 + time * 1.0) * 0.5;
-        posAttr.setZ(i, swell1 + swell2);
-    }
-    posAttr.needsUpdate = true;
-    oceanGeo.computeVertexNormals();
-};
 
 // --- ENDLESS CLOUD GENERATION LOGIC ---
 window.platforms = [];
