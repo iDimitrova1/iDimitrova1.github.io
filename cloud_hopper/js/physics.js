@@ -13,6 +13,12 @@ const AIR_SPEED_LIMIT = 0.11;  // Controlled horizontal air cap
 function resetPlayer() {
     yawObject.position.set(0, playerHeight, 0);
     velocity.set(0, 0, 0);
+    
+    // NEW SAFETIES: Forcefully wipe and rebuild the horizon track upon falling
+    if (typeof clearAllClouds === 'function' && typeof buildInitialTrack === 'function') {
+        clearAllClouds();
+        buildInitialTrack();
+    }
 }
 
 function updatePhysics() {
