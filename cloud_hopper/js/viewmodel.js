@@ -12,7 +12,7 @@ textureLoader.load(
     function (texture) {
         // 2. Create a flat 2D plane geometry
         // (Width = 0.4, Height = 0.4. Adjust these to match your image's proportions!)
-        const knifeGeo = new THREE.PlaneGeometry(0.4, 0.4);
+        const knifeGeo = new THREE.PlaneGeometry(0.45, 0.45);
 
         // 3. Create a material using basic shading so it stays bright and retro
         const knifeMat = new THREE.MeshBasicMaterial({ 
@@ -27,7 +27,7 @@ textureLoader.load(
 
         // 5. Calibration Positioning
         // X: push to the right, Y: pull down, Z: place slightly in front of lens
-        knifeSprite.position.set(0.16, -0.12, -0.4); 
+        knifeSprite.position.set(0.12, -0.12, -0.4); 
 
         // Add the flat mesh to our animated viewmodel group
         viewmodel.add(knifeSprite);
