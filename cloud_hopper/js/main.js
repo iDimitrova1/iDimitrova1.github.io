@@ -8,20 +8,22 @@ function animate() {
     if (gameStarted) {
         gameTime += 0.015;
 
-        // NEW: Passes current player position to render dense waves dynamically beneath them
+        // Run wave coordinates matching player updates
         updateOceanWaves(gameTime, yawObject.position.x, yawObject.position.z);
 
-        // Run movement mechanics calculations
+        // Run core player tracking calculations
         updatePhysics();
 
-        // Check positions to spawn and delete clouds dynamically
+        // Dynamically shift endless platforms
         manageEndlessClouds(yawObject.position.z);
 
-        // Map HUD Speedometer
+        // UI Speedometer Calculator
         const horizSpeed = Math.sqrt(velocity.x * velocity.x + velocity.z * velocity.z);
-        speedo.innerText = Math.round(horizSpeed * 1000);
+        if (speedo) {
+            speedo.innerText = Math.round(horizSpeed * 1000);
+        }
 
-        // CS 1.6 Viewmodel Sprite Bobbing Controller
+        // Viewmodel Motion 
         if (viewmodel) {
             if (isGrounded && horizSpeed > 0.005) {
                 bobTimer += horizSpeed * 0.8;
@@ -32,7 +34,7 @@ function animate() {
                 viewmodel.position.x = THREE.MathUtils.lerp(viewmodel.position.x, 0.01, 0.1);
             } else {
                 bobTimer += 0.02;
-                viewmodel.position.y = Math.sin(bobTimer * 0.5) * 0.004; // Smoothed standing breathe speed
+                viewmodel.position.y = Math.sin(bobTimer * 0.5) * 0.004;
                 viewmodel.position.x = THREE.MathUtils.lerp(viewmodel.position.x, 0, 0.1);
             }
         }
@@ -41,5 +43,5 @@ function animate() {
     renderer.render(scene, camera);
 }
 
-// Run the core clock loop
+// Start the core render clock
 animate();
