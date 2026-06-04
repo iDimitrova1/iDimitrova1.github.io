@@ -27,7 +27,7 @@ textureLoader.load(
 
         // 5. Calibration Positioning
         // X: push to the right, Y: pull down, Z: place slightly in front of lens
-        knifeSprite.position.set(0.4, -0.22, -0.4); 
+        knifeSprite.position.set(0.6, -0.12, -0.4); 
 
         // Add the flat mesh to our animated viewmodel group
         viewmodel.add(knifeSprite);
