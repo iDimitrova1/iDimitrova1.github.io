@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2D Side-Scroller Jumper</title>
+    <title>Floating Islands Platformer</title>
     <style>
         body {
             margin: 0;
@@ -18,7 +18,7 @@
         }
         canvas {
             border: 4px solid #fff;
-            background: #4a90e2; /* Fallback background color */
+            background: #87CEEB; /* Light blue sky */
             box-shadow: 0 10px 20px rgba(0,0,0,0.5);
         }
         .instructions {
@@ -31,161 +31,179 @@
 
     <canvas id="gameCanvas" width="800" height="400"></canvas>
     <div class="instructions">
-        <p>Press <strong>SPACEBAR</strong> or <strong>UP ARROW</strong> to Jump</p>
-        <p>Score points by clearing obstacles!</p>
+        <p>Use <strong>LEFT / RIGHT ARROWS</strong> to Move | Press <strong>SPACEBAR</strong> or <strong>UP ARROW</strong> to Jump</p>
+        <p>Don't fall into the void!</p>
     </div>
 
 <script>
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
-// --- CUSTOM TEXTURE LOADING ---
-// Replace the URLs below with your own image file paths (e.g., "images/player.png")
-const textures = {
-    background: new Image(),
-    player: new Image(),
-    obstacle: new Image(),
-    ground: new Image()
-};
-
-textures.background.src = 'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?q=80&w=800&auto=format&fit=crop'; // Placeholder gradient
-textures.player.src = '';    // Put your player image URL here
-textures.obstacle.src = '';  // Put your obstacle image URL here
-textures.ground.src = '';    // Put your ground image URL here
-
-// Helper function to safely draw texture or fallback to color
-function drawSprite(img, x, y, width, height, fallbackColor) {
-    if (img.src && img.complete && img.naturalWidth !== 0) {
-        ctx.drawImage(img, x, y, width, height);
-    } else {
-        ctx.fillStyle = fallbackColor;
-        ctx.fillRect(x, y, width, height);
-    }
-}
-
 // --- GAME VARIABLES ---
 const gravity = 0.6;
 let score = 0;
 let gameOver = false;
-let gameSpeed = 5;
+let cameraX = 0;
 
 // Player Object
 const player = {
     x: 100,
-    y: 300,
-    width: 50,
-    height: 60,
-    velocityY: 0,
-    isGrounded: false,
-    jumpForce: 13
+    y: 100,
+    width: 40,
+    height: 40,
+    vx: 0,
+    vy: 0,
+    speed: 6,
+    jumpForce: 12,
+    isGrounded: false
 };
 
-// Ground Object
-const ground = {
-    x: 0,
-    y: 350,
-    width: canvas.width,
-    height: 50
-};
-
-// Obstacles Array
-let obstacles = [];
-let spawnTimer = 0;
+// Platforms Array
+let platforms = [];
 
 // --- INPUTS ---
-const keys = {};
+const keys = {
+    right: false,
+    left: false,
+    up: false
+};
+
 window.addEventListener('keydown', (e) => {
-    if ((e.code === 'Space' || e.code === 'ArrowUp') && player.isGrounded && !gameOver) {
-        player.velocityY = -player.jumpForce;
-        player.isGrounded = false;
-    }
-    if (gameOver && e.code === 'Space') {
-        resetGame();
+    if (e.code === 'ArrowRight') keys.right = true;
+    if (e.code === 'ArrowLeft') keys.left = true;
+    if ((e.code === 'Space' || e.code === 'ArrowUp')) {
+        if (player.isGrounded && !gameOver) {
+            player.vy = -player.jumpForce;
+            player.isGrounded = false;
+        }
+        if (gameOver) resetGame();
     }
 });
 
-// --- GAME LOGIC ---
-function spawnObstacle() {
-    spawnTimer++;
-    if (spawnTimer > Math.random() * 60 + 90) { // Random timing between spawns
-        const height = Math.random() * 40 + 40; // Random heights
-        obstacles.push({
-            x: canvas.width,
-            y: ground.y - height,
-            width: 30,
-            height: height
-        });
-        spawnTimer = 0;
+window.addEventListener('keyup', (e) => {
+    if (e.code === 'ArrowRight') keys.right = false;
+    if (e.code === 'ArrowLeft') keys.left = false;
+});
+
+// --- LEVEL GENERATION ---
+function generatePlatform(startX) {
+    const minWidth = 80;
+    const maxWidth = 200;
+    const gap = Math.random() * 80 + 40; // Gap between platforms
+    const width = Math.random() * (maxWidth - minWidth) + minWidth;
+    
+    // Random height between 150 and 350
+    const y = Math.random() * 200 + 150; 
+
+    platforms.push({
+        x: startX + gap,
+        y: y,
+        width: width,
+        height: 20
+    });
+}
+
+function initLevel() {
+    platforms = [];
+    // Starting platform right underneath the player
+    platforms.push({ x: 50, y: 300, width: 200, height: 20 });
+    
+    // Generate initial platforms
+    let lastX = 250;
+    for (let i = 0; i < 5; i++) {
+        generatePlatform(lastX);
+        lastX = platforms[platforms.length - 1].x + platforms[platforms.length - 1].width;
     }
 }
 
+// --- GAME LOGIC ---
 function update() {
     if (gameOver) return;
 
+    // Horizontal Movement
+    if (keys.right) player.vx = player.speed;
+    else if (keys.left) player.vx = -player.speed;
+    else player.vx = 0;
+
+    player.x += player.vx;
+
+    // Camera Scrolling (Push platforms back if player goes past center)
+    if (player.x > canvas.width / 2) {
+        const offset = player.x - (canvas.width / 2);
+        player.x = canvas.width / 2; // Keep player in middle
+        
+        // Move all platforms left
+        platforms.forEach(plat => plat.x -= offset);
+        
+        // Increase score based on distance traveled
+        score += Math.floor(offset / 10);
+    }
+
+    // Block player from going off the left edge of the screen
+    if (player.x < 0) player.x = 0;
+
     // Apply Gravity
-    player.velocityY += gravity;
-    player.y += player.velocityY;
+    player.vy += gravity;
+    player.y += player.vy;
+    player.isGrounded = false;
 
-    // Ground Collision
-    if (player.y + player.height >= ground.y) {
-        player.y = ground.y - player.height;
-        player.velocityY = 0;
-        player.isGrounded = true;
+    // Platform Collisions
+    platforms.forEach(plat => {
+        // Simple AABB Collision Detection
+        if (player.x < plat.x + plat.width && 
+            player.x + player.width > plat.x &&
+            player.y < plat.y + plat.height && 
+            player.y + player.height > plat.y) {
+            
+            // Only land if falling downwards onto the platform
+            if (player.vy > 0 && player.y + player.height - player.vy <= plat.y + 10) {
+                player.y = plat.y - player.height;
+                player.vy = 0;
+                player.isGrounded = true;
+            }
+        }
+    });
+
+    // Generate new platforms as old ones go off screen
+    const lastPlat = platforms[platforms.length - 1];
+    if (lastPlat.x < canvas.width + 100) {
+        generatePlatform(lastPlat.x + lastPlat.width);
     }
 
-    // Move & Update Obstacles
-    for (let i = obstacles.length - 1; i >= 0; i--) {
-        obstacles[i].x -= gameSpeed;
-
-        // Collision Detection (AABB)
-        if (
-            player.x < obstacles[i].x + obstacles[i].width &&
-            player.x + player.width > obstacles[i].x &&
-            player.y < obstacles[i].y + obstacles[i].height &&
-            player.y + player.height > obstacles[i].y
-        ) {
-            gameOver = true;
-        }
-
-        // Score tracking
-        if (obstacles[i].x + obstacles[i].width < player.x && !obstacles[i].scored) {
-            score++;
-            obstacles[i].scored = true;
-            // Gradually speed up the game
-            if (score % 5 === 0) gameSpeed += 0.5;
-        }
-
-        // Remove old obstacles
-        if (obstacles[i].x + obstacles[i].width < 0) {
-            obstacles.splice(i, 1);
-        }
+    // Clean up platforms that have gone too far left
+    if (platforms[0].x + platforms[0].width < -200) {
+        platforms.shift();
     }
 
-    spawnObstacle();
+    // Death Condition (Falling off screen)
+    if (player.y > canvas.height) {
+        gameOver = true;
+    }
 }
 
 function draw() {
     // Clear Canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // 1. Draw Background
-    drawSprite(textures.background, 0, 0, canvas.width, canvas.height, '#4a90e2');
-
-    // 2. Draw Ground
-    drawSprite(textures.ground, ground.x, ground.y, ground.width, ground.height, '#34a853');
-
-    // 3. Draw Player
-    drawSprite(textures.player, player.x, player.y, player.width, player.height, '#ff4757');
-
-    // 4. Draw Obstacles
-    obstacles.forEach(obs => {
-        drawSprite(textures.obstacle, obs.x, obs.y, obs.width, obs.height, '#ffa502');
+    // Draw Platforms (Floating Islands)
+    ctx.fillStyle = '#34a853'; // Grass color
+    platforms.forEach(plat => {
+        // Draw grass top
+        ctx.fillRect(plat.x, plat.y, plat.width, plat.height);
+        // Draw dirt bottom
+        ctx.fillStyle = '#8B4513';
+        ctx.fillRect(plat.x, plat.y + 5, plat.width, plat.height + 15);
+        ctx.fillStyle = '#34a853'; // reset to grass
     });
 
-    // 5. Draw Score
-    ctx.fillStyle = 'white';
+    // Draw Player
+    ctx.fillStyle = '#ff4757';
+    ctx.fillRect(player.x, player.y, player.width, player.height);
+
+    // Draw Score
+    ctx.fillStyle = 'black';
     ctx.font = '24px sans-serif';
-    ctx.fillText(`Score: ${score}`, 20, 40);
+    ctx.fillText(`Distance: ${score}`, 20, 40);
 
     // Game Over Overlay
     if (gameOver) {
@@ -195,29 +213,31 @@ function draw() {
         ctx.fillStyle = 'white';
         ctx.font = '40px sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText('GAME OVER', canvas.width / 2, canvas.height / 2 - 10);
+        ctx.fillText('YOU FELL!', canvas.width / 2, canvas.height / 2 - 10);
         
         ctx.font = '20px sans-serif';
         ctx.fillText('Press SPACEBAR to Restart', canvas.width / 2, canvas.height / 2 + 30);
-        ctx.textAlign = 'start'; // Reset alignment
+        ctx.textAlign = 'start';
     }
 }
 
 function resetGame() {
-    obstacles = [];
     score = 0;
-    gameSpeed = 5;
     gameOver = false;
-    player.y = ground.y - player.height;
+    player.x = 100;
+    player.y = 100;
+    player.vy = 0;
+    player.vx = 0;
+    initLevel();
 }
 
-// Main Loop
+// Start Game
+initLevel();
 function gameLoop() {
     update();
     draw();
     requestAnimationFrame(gameLoop);
 }
-
 gameLoop();
 </script>
 </body>
