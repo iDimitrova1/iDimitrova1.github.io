@@ -7,12 +7,14 @@ function animate() {
 
     if (gameStarted) {
         gameTime += 0.015;
-        updateOceanWaves(gameTime);
+
+        // NEW: Passes current player position to render dense waves dynamically beneath them
+        updateOceanWaves(gameTime, yawObject.position.x, yawObject.position.z);
 
         // Run movement mechanics calculations
         updatePhysics();
 
-        // NEW: Check positions to spawn and delete clouds dynamically
+        // Check positions to spawn and delete clouds dynamically
         manageEndlessClouds(yawObject.position.z);
 
         // Map HUD Speedometer
@@ -30,7 +32,7 @@ function animate() {
                 viewmodel.position.x = THREE.MathUtils.lerp(viewmodel.position.x, 0.01, 0.1);
             } else {
                 bobTimer += 0.02;
-                viewmodel.position.y = Math.sin(bobTimer) * 0.004;
+                viewmodel.position.y = Math.sin(bobTimer * 0.5) * 0.004; // Smoothed standing breathe speed
                 viewmodel.position.x = THREE.MathUtils.lerp(viewmodel.position.x, 0, 0.1);
             }
         }
