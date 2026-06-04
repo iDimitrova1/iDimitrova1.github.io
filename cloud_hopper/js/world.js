@@ -135,16 +135,20 @@ function buildInitialTrack() {
 // Global Manager triggered by main.js every frame
 function manageEndlessClouds(playerZ) {
     
-
-    // 1. SPAWN LOOP: Keep drawing clouds up to 180 units ahead of the player
-    while (lastSpawnZ > playerZ - 180) {
+	// 1. RESPOND TO SAFETY RESET: If player fell and teleported back to start, flush the map
+	if (playerZ > -1 && lastSpawnZ < -120)
+	{ clearAllClouds(); buildInitialTrack(); return;
+	}
+	
+    // 2. SPAWN LOOP: Keep drawing clouds up to 100 units ahead of the player
+   	 while (lastSpawnZ > playerZ - 100) {
         // Increment parameters to build smoothly along the negative Z channel
-        const gap = 13 + Math.random() * 5; // Random jump distance (13 to 18 units)
+        const gap = 13 + Math.random() * 12; // Random jump distance (13 to 18 units)
         lastSpawnZ -= gap;
         
         // Moderate weave left and right so it isn't a perfectly straight line
         lastSpawnX += (Math.random() - 0.5) * 6;
-        lastSpawnX = Math.max(-10, Math.min(10, lastSpawnX)); // Keep within bounds
+        lastSpawnX = Math.max(-20, Math.min(20, lastSpawnX)); // Keep within bounds
         
         // Gradual elevation adjustments
         nextSpawnY += (Math.random() - 0.3) * 1.5;
@@ -157,7 +161,7 @@ function manageEndlessClouds(playerZ) {
         addCloudPlatform(lastSpawnX, nextSpawnY, lastSpawnZ, width, depth, randomStyle);
     }
 
-    // 2. CLEANUP LOOP: Delete clouds passed by more than 40 units
+    // 3. CLEANUP LOOP: Delete clouds passed by more than 40 units
     for (let i = platforms.length - 1; i >= 0; i--) {
         const p = platforms[i];
         if (p.centerZ > playerZ + 40) {
