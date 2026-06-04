@@ -2,22 +2,21 @@
 <html lang="bg">
 <head>
     <meta charset="UTF-8">
-    <title>Игра Змия</title>
+    <title>zmii4ka</title>
     <style>
         body { background-color: #333; color: white; text-align: center; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; }
         canvas { border: 2px solid white; background-color: black; margin-top: 10px; }
         .controls { margin-top: 10px; }
-        button { padding: 10px 20px; font-size: 16px; cursor: pointer; }
+        button { padding: 8px 16px; font-size: 12px; cursor: pointer; }
         a { color: #00e5ff; display: block; margin-top: 10px; text-decoration: none; }
     </style>
 </head>
 <body>
-    <h1>Игра Змия</h1>
-    <h2 id="score">Резултат: 0</h2>
+    <h1 id="score">Резултат: 0</h1>
 
     <div class="controls">
         <button onclick="togglePause()">ПАУЗА / ПУСНИ</button>
-        <a href="index.html">nazad</a>
+        <button onclick="index.html">nazad</button>
     </div>
 
     <canvas id="gameCanvas" width="400" height="400"></canvas>
