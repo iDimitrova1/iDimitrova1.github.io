@@ -11,7 +11,7 @@ const GRAVITY = 0.0085;        // Balanced gravity arc
 const AIR_SPEED_LIMIT = 0.11;  // Controlled horizontal air cap
 
 function resetPlayer() {
-    yawObject.position.set(0, playerHeight, 0);
+    yawObject.position.set(0, playerHeight+ 5.0, 0);
     velocity.set(0, 0, 0);
 }
 

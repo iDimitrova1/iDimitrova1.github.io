@@ -1,25 +1,23 @@
 const speedo = document.getElementById('speedo');
 let bobTimer = 0;
-let gameTime = 0; 
+let gameTime = 0; // Tracks running clock ticks for wave math
 
 function animate() {
     requestAnimationFrame(animate);
 
     if (gameStarted) {
+        // 1. Progress time tracker and cycle ocean wave vertex offsets
         gameTime += 0.015;
         updateOceanWaves(gameTime);
 
-        // Run movement mechanics calculations
+        // 2. Compute physics frame
         updatePhysics();
 
-        // NEW: Check positions to spawn and delete clouds dynamically
-        manageEndlessClouds(yawObject.position.z);
-
-        // Map HUD Speedometer
+        // 3. Map HUD Speedometer
         const horizSpeed = Math.sqrt(velocity.x * velocity.x + velocity.z * velocity.z);
         speedo.innerText = Math.round(horizSpeed * 1000);
 
-        // CS 1.6 Viewmodel Sprite Bobbing Controller
+        // 4. CS-Style Viewmodel Bobbing
         if (viewmodel) {
             if (isGrounded && horizSpeed > 0.005) {
                 bobTimer += horizSpeed * 0.8;
@@ -39,5 +37,4 @@ function animate() {
     renderer.render(scene, camera);
 }
 
-// Run the core clock loop
 animate();
