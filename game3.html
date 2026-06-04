@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Parkour Game</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden; /* Stops scrollbars */
+            background-color: #87CEEB; /* Sky blue */
+            font-family: sans-serif;
+        }
+        /* The Crosshair in the center of the screen */
+        #crosshair {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 20px;
+            height: 20px;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            color: white;
+            font-size: 24px;
+            text-align: center;
+            line-height: 20px;
+            z-index: 10;
+        }
+        /* The Start Menu Overlay */
+        #menu {
+            position: absolute;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 20;
+            cursor: pointer;
+        }
+        h1 { font-size: 40px; margin-bottom: 10px; }
+        p { font-size: 18px; margin-top: 0; }
+    </style>
+</head>
+<body>
+
+    <div id="crosshair">+</div>
+    
+    <div id="menu">
+        <h1>3D PARKOUR</h1>
+        <p>Click anywhere to start</p>
+        <p style="font-size: 14px; color: #ccc;">WASD to Move | SPACE to Jump | Mouse to Look</p>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+<script>
+// --- 1. BASIC 3D SETUP ---
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x87CEEB); // Sky color
+scene.fog = new THREE.Fog(0x87CEEB, 10, 100); // Fades platforms out in the distance
+
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
+
+// Lighting
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+scene.add(ambientLight);
+const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+dirLight.position.set(100, 200, 50);
+scene.add(dirLight);
+
+// --- 2. PLAYER & CAMERA CONTROLS ---
+// We put the camera inside a "pitch" object (looks up/down) 
+// and put that inside a "yaw" object (looks left/right)
+const pitchObject = new THREE.Object3D();
+pitchObject.add(camera);
+const yawObject = new THREE.Object3D();
+yawObject.position.y = 2; // Player height
+yawObject.add(pitchObject);
+scene.add(yawObject);
+
+const playerHeight = 2;
+let velocity = new THREE.Vector3();
+let direction = new THREE.Vector3();
+let isGrounded = false;
+let gameStarted = false;
+
+// Movement Inputs
+const keys = { w: false, a: false, s: false, d: false, space: false };
+
+document.addEventListener('keydown', (event) => {
+    switch(event.code) {
+        case 'KeyW': keys.w = true; break;
+        case 'KeyA': keys.a = true; break;
+        case 'KeyS': keys.s = true; break;
+        case 'KeyD': keys.d = true; break;
+        case 'Space': 
+            if (isGrounded) velocity.y = 0.35; // Jump Force
+            break;
+    }
+});
+document.addEventListener('keyup', (event) => {
+    switch(event.code) {
+        case 'KeyW': keys.w = false; break;
+        case 'KeyA': keys.a = false; break;
+        case 'KeyS': keys.s = false; break;
+        case 'KeyD': keys.d = false; break;
+    }
+});
+
+// --- 3. MOUSE LOCK (FPS VIEW) ---
+const menu = document.getElementById('menu');
+menu.addEventListener('click', () => {
+    document.body.requestPointerLock();
+});
+
+document.addEventListener('pointerlockchange', () => {
+    if (document.pointerLockElement === document.body) {
+        gameStarted = true;
+        menu.style.display = 'none';
+    } else {
+        gameStarted = false;
+        menu.style.display = 'flex';
+    }
+});
+
+document.addEventListener('mousemove', (event) => {
+    if (!gameStarted) return;
+    const movementX = event.movementX || 0;
+    const movementY = event.movementY || 0;
+
+    yawObject.rotation.y -= movementX * 0.002;
+    pitchObject.rotation.x -= movementY * 0.002;
+    // Stop the camera from flipping upside down
+    pitchObject.rotation.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, pitchObject.rotation.x));
+});
+
+// --- 4. LEVEL DESIGN (PLATFORMS) ---
+const platforms = [];
+const material = new THREE.MeshLambertMaterial({ color: 0x34a853 }); // Grass green
+const geometry = new THREE.BoxGeometry(1, 1, 1);
+
+function createPlatform(x, y, z, width, depth) {
+    const plat = new THREE.Mesh(geometry, material);
+    plat.scale.set(width, 1, depth);
+    plat.position.set(x, y, z);
+    scene.add(plat);
+    
+    // Store bounding box data for easy collision checking
+    platforms.push({
+        minX: x - width/2, maxX: x + width/2,
+        minZ: z - depth/2, maxZ: z + depth/2,
+        y: y + 0.5 // Top surface of the platform
+    });
+}
+
+// Map Layout (Similar to a KZ start)
+createPlatform(0, 0, 0, 10, 10);      // Spawn platform
+createPlatform(0, 1, -12, 6, 6);      // Jump 1 (Slightly higher)
+createPlatform(8, 2, -18, 4, 4);      // Jump 2 (Curve right)
+createPlatform(18, 3, -18, 4, 4);     // Jump 3
+createPlatform(28, 5, -18, 5, 5);     // Jump 4 (Higher up)
+createPlatform(38, 4, -10, 4, 4);     // Jump 5 (Drop down)
+createPlatform(38, 4, 0, 8, 8);       // Final Platform
+
+function resetPlayer() {
+    yawObject.position.set(0, playerHeight, 0);
+    velocity.set(0,0,0);
+}
+
+// --- 5. GAME LOOP & PHYSICS ---
+const speed = 0.04;
+const friction = 0.85;
+const gravity = 0.015;
+
+function animate() {
+    requestAnimationFrame(animate);
+
+    if (gameStarted) {
+        // 1. Friction & Air Resistance
+        velocity.x *= friction;
+        velocity.z *= friction;
+        velocity.y -= gravity; // Apply Gravity
+
+        // 2. Player Input calculations
+        direction.z = Number(keys.w) - Number(keys.s);
+        direction.x = Number(keys.d) - Number(keys.a);
+        direction.normalize(); // Ensures diagonal movement isn't twice as fast
+
+        // Apply movement relative to where the camera is looking
+        if (keys.w || keys.s) {
+            velocity.z -= direction.z * speed * Math.cos(yawObject.rotation.y);
+            velocity.x -= direction.z * speed * Math.sin(yawObject.rotation.y);
+        }
+        if (keys.a || keys.d) {
+            velocity.x -= direction.x * speed * Math.cos(yawObject.rotation.y);
+            velocity.z += direction.x * speed * Math.sin(yawObject.rotation.y);
+        }
+
+        // 3. Update Position
+        yawObject.position.add(velocity);
+
+        // 4. Collision Detection (Checking if player is landing on a platform)
+        isGrounded = false;
+        for (let p of platforms) {
+            // Are we horizontally inside the platform?
+            if (yawObject.position.x > p.minX && yawObject.position.x < p.maxX &&
+                yawObject.position.z > p.minZ && yawObject.position.z < p.maxZ) {
+                
+                // Are we falling, and is our feet right above/on the platform?
+                const playerFeet = yawObject.position.y - playerHeight;
+                if (velocity.y <= 0 && playerFeet <= p.y && playerFeet > p.y - 1) {
+                    velocity.y = 0;
+                    yawObject.position.y = p.y + playerHeight;
+                    isGrounded = true;
+                }
+            }
+        }
+
+        // 5. Death / Respawn Check
+        if (yawObject.position.y < -10) {
+            resetPlayer();
+        }
+    }
+
+    renderer.render(scene, camera);
+}
+
+// Handle window resizing properly
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+// Start loop
+animate();
+</script>
+</body>
+</html>
