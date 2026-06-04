@@ -43,21 +43,20 @@ if (window.camera) {
     handle.position.y = -0.04;
     knife.add(handle);
 
-    // --- POSITION, ROTATE, AND SCALE THE KNIFE ---
+    // --- POSITION, ROTATE, AND SCALE FOR DEAD-CENTER ---
     
-    // Make the weapon bigger as requested
-    // Increase these three numbers together if you want it even larger!
-    knife.scale.set(2.6, 2.6, 2.6);
+    // Keep it nice and prominent on the screen
+    knife.scale.set(1.6, 1.6, 1.6);
 
-    // Rotate the blade so it tilts forward like an FPS viewpoint weapon
-    knife.rotation.x = Math.PI / 3.5;  // Lean forward
-    knife.rotation.y = -Math.PI / 6;   // Slight inward angle
-    knife.rotation.z = -Math.PI / 12;  // Natural hand slant
+    // Rotations: Flattened out so it comes straight up from the bottom
+    knife.rotation.x = Math.PI / 4.5; // Lean slightly forward into the screen for depth
+    knife.rotation.y = 0;             // Removed side angle so it doesn't look crooked
+    knife.rotation.z = 0;             // No rotation tilt left or right
 
-    // Anchor the knife to the bottom-right of the viewport
-    // x: positive moves right, negative moves left
-    // y: lower negative numbers pull it further DOWN to the screen edge
-    // z: controls depth distance from your eyes (-0.4 keeps it crisp and close)
+    // Positioning Grid:
+    // x = 0.0  --> Placed exactly in the horizontal center of the screen
+    // y = -0.32 --> Sunk low to look like it is rising straight up from the bottom edge
+    // z = -0.4  --> Distance away from your eyes
     knife.position.set(0.0, -0.32, -0.4);
 
     // 3. Nest the knife inside the animated viewmodel parent group
