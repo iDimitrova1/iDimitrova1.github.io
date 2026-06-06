@@ -8,8 +8,29 @@
     
 </head>
 <body>
-    <div id="score-ui" style="position: absolute; top: 20px; left: 20px; color: white; font-family: sans-serif; font-size: 24px;">
-         Score: <span id="score">0</span> m </div>
+   
+        <<div id="score-ui" style="
+    position: absolute; 
+    top: 20px; 
+    left: 20px; 
+    font-family: sans-serif; 
+    font-size: 20px; 
+    line-height: 1.6; 
+    z-index: 10000;
+    /* The 50% transparent black rectangle */
+    background-color: rgba(0, 0, 0, 0.5); 
+    /* Padding creates clean space around the text inside the box */
+    padding: 12px 20px; 
+    /* Smooth rounded corners for a modern gaming HUD look */
+    border-radius: 6px;
+    /* Clean subtle outline to make the box stand out from the sky */
+    border: 1px solid rgba(255, 255, 255, 0.1);
+">
+    <div style="color: #ffffff !important; font-weight: bold;">Score: <span id="score">0</span></div>
+    <div style="color: #60a5fa !important;">Previous Run: <span id="prev-score">0</span></div>
+    <div style="color: #00ff00 !important;">Best Score: <span id="best-score">0</span></div>
+</div>
+         
     <div id="crosshair"></div>
     <div id="ui">SPEED: <span id="speedo">0</span> u/s</div>
     

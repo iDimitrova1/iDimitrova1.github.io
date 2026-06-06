@@ -6,14 +6,45 @@ body {
 }
 #crosshair {
     position: absolute;
-    top: 50%; left: 50%;
-    width: 10px; height: 10px;
+    top: 50%; 
+    left: 50%;
+    /* Perfect screen centering */
     transform: translate(-50%, -50%);
+    
+    /* The overall size of the crosshair span */
+    width: 14px; 
+    height: 14px;
+    
     pointer-events: none;
-    background: rgba(255, 255, 255, 0.8);
-    border: 2px solid #333;
-    border-radius: 50%;
     z-index: 10;
+}
+
+/* Common styles for both lines of the cross */
+#crosshair::before,
+#crosshair::after {
+    content: '';
+    position: absolute;
+    background: #ff0000;
+    /* Thin black shadow border so you can see it against white clouds */
+    box-shadow: 0 0 1px #000; 
+}
+
+/* Horizontal Line */
+#crosshair::before {
+    top: 50%;
+    left: 0;
+    width: 100%;
+    height: 1px; /* Line thickness */
+    transform: translateY(-50%);
+}
+
+/* Vertical Line */
+#crosshair::after {
+    left: 50%;
+    top: 0;
+    width: 1px; /* Line thickness */
+    height: 100%;
+    transform: translateX(-50%);
 }
 #menu {
     position: absolute;

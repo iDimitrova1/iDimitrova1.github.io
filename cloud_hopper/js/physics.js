@@ -11,16 +11,29 @@ const GRAVITY = 0.0105;        // Balanced gravity arc
 const AIR_SPEED_LIMIT = 0.2;  // Controlled horizontal air cap
 
 function resetPlayer() {
+    // 1. Reset Position and Orientation
     yawObject.position.set(0, playerHeight + 5.0, 0);
     yawObject.rotation.set(0, 0, 0);
     pitchObject.rotation.set(0, 0, 0);
     velocity.set(0, 0, 0);
-    
 
-    // CRITICAL: This variable name MUST match the one in updateScore!
-    // If you used maxZ previously, change it to maxScore here.
+    // 3. SCORE TRACKING LOGIC (Order matters here!)
+    // A. Save the current run score to "Previous Run"
+    previousScore = maxZ;
+    if (prevScoreEl) {
+        prevScoreEl.innerText = previousScore;
+    }
+
+    // B. Check if this run beat your all-time high score
+    if (maxZ > bestScore) {
+        bestScore = maxZ;
+        if (bestScoreEl) {
+            bestScoreEl.innerText = bestScore;
+        }
+    }
+
+    // C. NOW safely reset the active score back to 0 for the next run
     maxZ = 0; 
-    
     if (scoreEl) {
         scoreEl.innerText = "0";
     }

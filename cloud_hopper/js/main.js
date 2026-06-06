@@ -79,8 +79,13 @@ function animateViewmodel(horizSpeed, delta) {
     }
 }
 
-let maxZ = 0; 
+let maxZ = 0;
+let previousScore = 0;
+let bestScore = 0;
+
 const scoreEl = document.getElementById('score');
+const prevScoreEl = document.getElementById('prev-score');
+const bestScoreEl = document.getElementById('best-score');
 
 function updateScore(zPos) {
     const currentScore = Math.floor(Math.abs(zPos));
