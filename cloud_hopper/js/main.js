@@ -64,7 +64,7 @@ function animateViewmodel(horizSpeed, delta) {
 
     if (isGrounded && horizSpeed > 0.005) {
         // Player is sprinting: Bob rhythmically based on velocity pace
-        bobTimer += horizSpeed * 50 * delta; 
+        bobTimer += horizSpeed * 20 * delta; 
         viewmodel.position.y = Math.sin(bobTimer * 2) * 0.025;
         viewmodel.position.x = Math.cos(bobTimer) * 0.015;
     } else if (!isGrounded) {
@@ -79,12 +79,13 @@ function animateViewmodel(horizSpeed, delta) {
     }
 }
 
-let maxZ = 0; // Global variable
+let maxZ = 0; 
 const scoreEl = document.getElementById('score');
 
 function updateScore(zPos) {
-    // We want positive score for moving in the negative Z direction
     const currentScore = Math.floor(Math.abs(zPos));
+    
+    // It only updates if currentScore is higher than maxScore
     if (currentScore > maxZ) {
         maxZ = currentScore;
         scoreEl.innerText = maxZ;
