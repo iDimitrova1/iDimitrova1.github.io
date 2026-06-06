@@ -1,10 +1,19 @@
-// --- MAIN GAME ENGINE CONTROLLER ---
+// main.js - MAIN GAME ENGINE CONTROLLER
+const ambient = new THREE.AmbientLight(0x404040, 2); // Soft overall light
+const directional = new THREE.DirectionalLight(0xffffff, 1); // Highlights for the waves
+directional.position.set(0, 50, 50);
+scene.add(ambient);
+scene.add(directional);
 
 // 1. Core Clock & UI Elements
 const clock = new THREE.Clock();
 const speedo = document.getElementById('speedo');
 let bobTimer = 0;
 let gameTime = 0;
+
+// Track whether the mountains have successfully booted up yet
+let mountainsInitialized = false;
+let oceanInitialized = false;
 
 /**
  * Main Animation and Logic Clock Loop
@@ -14,41 +23,52 @@ function animate() {
 
     // Get the seconds passed since the last rendered frame
     const delta = clock.getDelta();
-
-    // Cap extreme delta spikes (e.g., if the user switches browser tabs) to prevent clipping
     const cappedDelta = Math.min(delta, 0.1);
 
-    if (gameStarted) {
-        // A. Track accumulated runtime for mathematical wave equations
-        gameTime += cappedDelta;
-        updateOceanWaves(gameTime);
+    // INITIALIZATION GUARD:
+    // Safely waits until scene/MountainManager are fully loaded in the browser browser window
+    if (!mountainsInitialized && typeof scene !== 'undefined' && typeof MountainManager !== 'undefined') {
+        MountainManager.init(scene);
+        mountainsInitialized = true;
+    }
+    
+    if (!oceanInitialized && typeof scene !== 'undefined' && typeof OceanManager !== 'undefined') {
+        OceanManager.init(scene);
+        oceanInitialized = true;
+    }
 
-        // B. Advance physics engine frame using time-corrected steps
+    if (gameStarted) {
+        gameTime += cappedDelta;
+        if (oceanInitialized) {
+            OceanManager.update(gameTime, yawObject.position.z);
+        }
         updatePhysics(cappedDelta);
 
-        // C. Track the player's current depth location to handle endless generation
         if (typeof yawObject !== 'undefined') {
             manageEndlessClouds(yawObject.position.z);
         }
 
-        // D. Update Velocity HUD Speedometer
         if (typeof velocity !== 'undefined') {
             const horizSpeed = Math.sqrt(velocity.x * velocity.x + velocity.z * velocity.z);
-            // Scaled multiplier to match a clean tactical speed readout
-            speedo.innerText = Math.round(horizSpeed * 1000);
+            if (speedo) {
+                speedo.innerText = Math.round(horizSpeed * 1000);
+            }
             
-            //D.1 Score track
-	if (typeof yawObject !== 'undefined') {
-  	  manageEndlessClouds(yawObject.position.z);
-   	 updateScore(yawObject.position.z); // Track progress
-	}
+            if (typeof yawObject !== 'undefined') {
+                updateScore(yawObject.position.z);
+            }
             
-            // E. Counter-Strike Viewmodel Animation Controller
             animateViewmodel(horizSpeed, cappedDelta);
         }
     }
+	
+	OceanManager.update(gameTime, yawObject.position.z);
+    // Update mountain positioning relative to player progress
+    if (mountainsInitialized && typeof yawObject !== 'undefined' && yawObject) {
+        MountainManager.manage(yawObject.position.z, scene);
+    }
 
-    // F. Render the synchronized scene frame to the canvas viewport
+    // Render the synchronized scene frame to the canvas viewport
     if (typeof renderer !== 'undefined' && typeof scene !== 'undefined' && typeof camera !== 'undefined') {
         renderer.render(scene, camera);
     }
@@ -56,23 +76,18 @@ function animate() {
 
 /**
  * Handles CS 1.6 Viewmodel Bobbing, Jumps, and Sway
- * @param {number} horizSpeed - Current flat moving speed
- * @param {number} delta - Capped clock time slice
  */
 function animateViewmodel(horizSpeed, delta) {
     if (!viewmodel) return;
 
     if (isGrounded && horizSpeed > 0.005) {
-        // Player is sprinting: Bob rhythmically based on velocity pace
         bobTimer += horizSpeed * 20 * delta; 
         viewmodel.position.y = Math.sin(bobTimer * 2) * 0.025;
         viewmodel.position.x = Math.cos(bobTimer) * 0.015;
     } else if (!isGrounded) {
-        // Player is airborne: Smoothly sag the weapon down out of vision center
         viewmodel.position.y = THREE.MathUtils.lerp(viewmodel.position.y, -0.04, 10 * delta);
         viewmodel.position.x = THREE.MathUtils.lerp(viewmodel.position.x, 0.01, 10 * delta);
     } else {
-        // Player is standing completely still: Idle organic breathing rhythm
         bobTimer += 1.5 * delta;
         viewmodel.position.y = Math.sin(bobTimer) * 0.004;
         viewmodel.position.x = THREE.MathUtils.lerp(viewmodel.position.x, 0, 10 * delta);
@@ -89,14 +104,13 @@ const bestScoreEl = document.getElementById('best-score');
 
 function updateScore(zPos) {
     const currentScore = Math.floor(Math.abs(zPos));
-    
-    // It only updates if currentScore is higher than maxScore
     if (currentScore > maxZ) {
         maxZ = currentScore;
-        scoreEl.innerText = maxZ;
+        if (scoreEl) {
+            scoreEl.innerText = maxZ;
+        }
     }
 }
 
 // --- KICKSTART THE SYSTEM ---
-// Start the master execution loop
 animate();
