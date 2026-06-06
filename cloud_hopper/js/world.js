@@ -83,8 +83,6 @@ function addCloudPlatform(x, y, z, width, depth, varianceType = 0) {
         color: 0xffffff, 
     transparent: true,
     opacity: 0.8,      // Almost solid, but light catches the edges better
-    roughness: 0.95,
-    flatShading: false
     });
 
     const sphereGeo = new THREE.SphereGeometry(1, 16, 16);
