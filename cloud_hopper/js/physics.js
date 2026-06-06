@@ -3,12 +3,12 @@ let velocity = new THREE.Vector3();
 let isGrounded = false;
 
 // --- DYNAMIC MIDDLE-GROUND TUNERS ---
-const GROUND_ACCEL = 0.09;     // Sweeter pickup speed (between 0.04 and 0.08)
-const GROUND_FRICTION = 0.83;  // Crisp but natural slide deceleration
+const GROUND_ACCEL = 0.1;     // Sweeter pickup speed (between 0.04 and 0.08)
+const GROUND_FRICTION = 0.85;  // Crisp but natural slide deceleration
 const AIR_ACCEL = 0.02;        // Clean, responsive mid-air adjustments
-const BASE_JUMP_FORCE = 0.2;  // Solid base hop height
-const GRAVITY = 0.0085;        // Balanced gravity arc
-const AIR_SPEED_LIMIT = 0.12;  // Controlled horizontal air cap
+const BASE_JUMP_FORCE = 0.23;  // Solid base hop height
+const GRAVITY = 0.0105;        // Balanced gravity arc
+const AIR_SPEED_LIMIT = 0.2;  // Controlled horizontal air cap
 
 function resetPlayer() {
     yawObject.position.set(0, playerHeight+ 5.0, 0);
@@ -37,7 +37,7 @@ function updatePhysics() {
             const horizSpeed = Math.sqrt(velocity.x * velocity.x + velocity.z * velocity.z);
             
             // Rebalanced jump multiplier for controllable sprint-jumps
-            const jumpBonus = horizSpeed * 0.45; 
+            const jumpBonus = horizSpeed * 0.35; 
             velocity.y = BASE_JUMP_FORCE + jumpBonus;
             
             isGrounded = false;

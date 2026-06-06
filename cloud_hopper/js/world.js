@@ -128,45 +128,40 @@ function buildInitialTrack() {
     lastSpawnX = 0;
     
     // Safety starting zone
-    addCloudPlatform(0, 0, 0, 12, 12, 0);
+    addCloudPlatform(0, 0, 0, 18, 18, 0);
 }
 
 // Global Manager triggered by main.js every frame
 function manageEndlessClouds(playerZ) {
     
-	// 1. RESPOND TO SAFETY RESET: If player fell and teleported back to start, flush the map
-	if (playerZ > -1 && lastSpawnZ < -146)
+    // 1. SPAWN LOOP: Keep drawing clouds up to 100 units ahead of the player
+    
+    if (playerZ > -1 && lastSpawnZ < -150)
 	{ clearAllClouds(); buildInitialTrack(); return;
 	}
-	
-    // 2. SPAWN LOOP: Keep drawing clouds up to 100 units ahead of the player
-   	 while (lastSpawnZ > playerZ - 100) {
-        // Increment parameters to build smoothly along the negative Z channel
-        const gap = 45 + Math.random() * 12; // Random jump distance (13 to 18 units)
+     while (lastSpawnZ > playerZ - 100) {
+        const gap = 45 + Math.random() * 12; 
         lastSpawnZ -= gap;
         
-        // Moderate weave left and right so it isn't a perfectly straight line
         lastSpawnX += (Math.random() - 0.5) * 16;
-        lastSpawnX = Math.max(-40, Math.min(40, lastSpawnX)); // Keep within bounds
+        lastSpawnX = Math.max(-40, Math.min(40, lastSpawnX)); 
         
-        // Gradual elevation adjustments
         nextSpawnY += (Math.random() - 0.3) * 3.5;
-        nextSpawnY = Math.max(-2, Math.min(15, nextSpawnY)); // Prevent drifting too high/low
+        nextSpawnY = Math.max(-2, Math.min(15, nextSpawnY)); 
 
         const width = 14 + Math.random() * 5;
         const depth = 14 + Math.random() * 5;
-        const randomStyle = Math.floor(Math.random() * 3); // 0=Normal, 1=Puffy, 2=Flat
+        const randomStyle = Math.floor(Math.random() * 3); 
 
         addCloudPlatform(lastSpawnX, nextSpawnY, lastSpawnZ, width, depth, randomStyle);
     }
 
-    // 3. CLEANUP LOOP: Delete clouds passed by more than 40 units
+    // 2. CLEANUP LOOP: Delete clouds passed by more than 40 units
     for (let i = platforms.length - 1; i >= 0; i--) {
         const p = platforms[i];
         if (p.centerZ > playerZ + 40) {
             scene.remove(p.mesh);
 
-            // Crucial: Clear GPU memory allocations to prevent browser tab crashes
             p.mesh.traverse((child) => {
                 if (child.isMesh) {
                     child.geometry.dispose();
@@ -174,7 +169,6 @@ function manageEndlessClouds(playerZ) {
                 }
             });
 
-            // Remove from tracking array
             platforms.splice(i, 1);
         }
     }
