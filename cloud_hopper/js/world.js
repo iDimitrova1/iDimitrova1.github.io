@@ -64,6 +64,11 @@ function updateOceanWaves(time) {
     }
     posAttr.needsUpdate = true;
     oceanGeo.computeVertexNormals();
+	if (typeof yawObject !== 'undefined') {
+    // Keep the ocean following the player on the Z-axis
+    // We only update the Z position to keep it aligned
+    ocean.position.z = yawObject.position.z;
+}
 }
 
 // --- ENDLESS PROCEDURAL CLOUD LOGIC ---
@@ -76,38 +81,32 @@ function addCloudPlatform(x, y, z, width, depth, varianceType = 0) {
     const cloudGroup = new THREE.Group();
     const cloudMat = new THREE.MeshLambertMaterial({ 
         color: 0xffffff, 
-        roughness: 0.85,
-        flatShading: true 
+    transparent: true,
+    opacity: 0.8,      // Almost solid, but light catches the edges better
+    roughness: 0.95,
+    flatShading: false
     });
 
-    const sphereCount = Math.floor((width * depth) / 1.4) + 8;
+    const sphereGeo = new THREE.SphereGeometry(1, 16, 16);
+
+    const sphereCount = 150 + Math.floor(Math.random() * 5);
     
-    for (let i = 0; i < sphereCount; i++) {
-        let radius = 0.6 + Math.random() * 0.8;
-        let scaleY = 1.0;
-
-        if (varianceType === 1) {       
-            scaleY = 1.5 + Math.random() * 0.6;
-        } else if (varianceType === 2) { 
-            scaleY = 0.4 + Math.random() * 0.3;
-            radius += 0.4;
-        }
-
-        const geo = new THREE.SphereGeometry(radius, 8, 8);
-        const mesh = new THREE.Mesh(geo, cloudMat);
-        mesh.scale.set(1.0, scaleY, 1.0);
-
-        const offsetX = (Math.random() - 0.5) * (width - 1.0);
-        const offsetZ = (Math.random() - 0.5) * (depth - 1.0);
+	for (let i = 0; i < sphereCount; i++) {
+        const mesh = new THREE.Mesh(sphereGeo, cloudMat);
         
-        const distFromCenter = Math.sqrt(offsetX*offsetX + offsetZ*offsetZ);
-        const maxDist = Math.sqrt((width*width + depth*depth) / 4);
-        const centerLift = (1.0 - (distFromCenter / maxDist)) * 0.7;
-        const offsetY = ((Math.random() - 0.5) * 0.3) + centerLift;
+        // Vary the size of each sphere to create a "lumpy" organic shape
+        const s = 0.8 + Math.random() * 1.2;
+        mesh.scale.set(s, s * 0.8, s); 
 
-        mesh.position.set(offsetX, offsetY, offsetZ);
+        // Position them in a cluster
+        const offsetX = (Math.random() - 0.5) * width;
+        const offsetZ = (Math.random() - 0.5) * depth;
+        mesh.position.set(offsetX, 0, offsetZ);
+        
         cloudGroup.add(mesh);
     }
+    cloudGroup.position.set(x, y, z);
+    scene.add(cloudGroup);
 
     cloudGroup.position.set(x, y, z);
     scene.add(cloudGroup);
@@ -136,26 +135,26 @@ function buildInitialTrack() {
 function manageEndlessClouds(playerZ) {
     
 	// 1. RESPOND TO SAFETY RESET: If player fell and teleported back to start, flush the map
-	if (playerZ > -1 && lastSpawnZ < -120)
+	if (playerZ > -1 && lastSpawnZ < -146)
 	{ clearAllClouds(); buildInitialTrack(); return;
 	}
 	
     // 2. SPAWN LOOP: Keep drawing clouds up to 100 units ahead of the player
    	 while (lastSpawnZ > playerZ - 100) {
         // Increment parameters to build smoothly along the negative Z channel
-        const gap = 20 + Math.random() * 12; // Random jump distance (13 to 18 units)
+        const gap = 45 + Math.random() * 12; // Random jump distance (13 to 18 units)
         lastSpawnZ -= gap;
         
         // Moderate weave left and right so it isn't a perfectly straight line
         lastSpawnX += (Math.random() - 0.5) * 16;
-        lastSpawnX = Math.max(-20, Math.min(20, lastSpawnX)); // Keep within bounds
+        lastSpawnX = Math.max(-40, Math.min(40, lastSpawnX)); // Keep within bounds
         
         // Gradual elevation adjustments
         nextSpawnY += (Math.random() - 0.3) * 3.5;
         nextSpawnY = Math.max(-2, Math.min(15, nextSpawnY)); // Prevent drifting too high/low
 
-        const width = 8 + Math.random() * 5;
-        const depth = 8 + Math.random() * 5;
+        const width = 14 + Math.random() * 5;
+        const depth = 14 + Math.random() * 5;
         const randomStyle = Math.floor(Math.random() * 3); // 0=Normal, 1=Puffy, 2=Flat
 
         addCloudPlatform(lastSpawnX, nextSpawnY, lastSpawnZ, width, depth, randomStyle);

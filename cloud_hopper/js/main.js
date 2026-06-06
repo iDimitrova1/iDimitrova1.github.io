@@ -37,6 +37,12 @@ function animate() {
             // Scaled multiplier to match a clean tactical speed readout
             speedo.innerText = Math.round(horizSpeed * 1000);
             
+            //D.1 Score track
+	if (typeof yawObject !== 'undefined') {
+  	  manageEndlessClouds(yawObject.position.z);
+   	 updateScore(yawObject.position.z); // Track progress
+	}
+            
             // E. Counter-Strike Viewmodel Animation Controller
             animateViewmodel(horizSpeed, cappedDelta);
         }
@@ -70,6 +76,18 @@ function animateViewmodel(horizSpeed, delta) {
         bobTimer += 1.5 * delta;
         viewmodel.position.y = Math.sin(bobTimer) * 0.004;
         viewmodel.position.x = THREE.MathUtils.lerp(viewmodel.position.x, 0, 10 * delta);
+    }
+}
+
+let maxZ = 0; // Global variable
+const scoreEl = document.getElementById('score');
+
+function updateScore(zPos) {
+    // We want positive score for moving in the negative Z direction
+    const currentScore = Math.floor(Math.abs(zPos));
+    if (currentScore > maxZ) {
+        maxZ = currentScore;
+        scoreEl.innerText = maxZ;
     }
 }
 
