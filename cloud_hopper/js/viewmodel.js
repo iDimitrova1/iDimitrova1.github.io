@@ -1,41 +1,57 @@
-// Global container for the weapon viewmodel
-let viewmodel = new THREE.Group();
+// viewmodel.js
+// Layer 0 is the world. Layer 1 is reserved for first-person UI/weapon art.
+const VIEWMODEL_LAYER = 1;
 
-// Attach the empty container to the camera immediately so it tracks head movement
+let viewmodel = new THREE.Group();
+viewmodel.name = "first-person-viewmodel";
+viewmodel.userData.viewModel = true;
+viewmodel.userData.rayTraceIgnore = true;
+viewmodel.layers.set(VIEWMODEL_LAYER);
+
+if (camera && camera.layers) {
+  camera.layers.enable(0);
+  camera.layers.enable(VIEWMODEL_LAYER);
+}
+
 camera.add(viewmodel);
 
-// 1. Initialize the Texture Loader to read 2D images
 const textureLoader = new THREE.TextureLoader();
 
 textureLoader.load(
-    'assets/cs16_knife.png', // Path to your transparent PNG
-    function (texture) {
-        // 2. Create a flat 2D plane geometry
-        // (Width = 0.4, Height = 0.4. Adjust these to match your image's proportions!)
-        const knifeGeo = new THREE.PlaneGeometry(0.4, 0.4);
-
-        // 3. Create a material using basic shading so it stays bright and retro
-        const knifeMat = new THREE.MeshBasicMaterial({ 
-            map: texture, 
-            transparent: true, // Enables the PNG transparency
-            depthTest: false,  // CRITICAL: Forces the weapon to always draw ON TOP of clouds
-            depthWrite: false
-        });
-
-        // 4. Combine shape and image into a mesh
-        const knifeSprite = new THREE.Mesh(knifeGeo, knifeMat);
-
-        knifeSprite.scale.set(1.4, 1.4, 1.4);
-
-        // 5. Calibration Positioning
-        // X: push to the right, Y: pull down, Z: place slightly in front of lens
-        knifeSprite.position.set(0.08, -0.05, -0.3); 
-
-        // Add the flat mesh to our animated viewmodel group
-        viewmodel.add(knifeSprite);
-    },
-    undefined,
-    function (error) {
-        console.error('Error loading the knife image sprite:', error);
+  "assets/cs16_knife.png",
+  function(texture) {
+    if (THREE.sRGBEncoding !== undefined) {
+      texture.encoding = THREE.sRGBEncoding;
     }
+
+    const knifeGeo = new THREE.PlaneGeometry(0.4, 0.4);
+    const knifeMat = new THREE.MeshBasicMaterial({
+      map: texture,
+      transparent: true,
+      depthTest: false,
+      depthWrite: false,
+      fog: false
+    });
+
+    // Keep the 2D knife art from being brightened/dimmed by day-night exposure.
+    if (knifeMat.toneMapped !== undefined) {
+      knifeMat.toneMapped = false;
+    }
+
+    const knifeSprite = new THREE.Mesh(knifeGeo, knifeMat);
+    knifeSprite.name = "knife-viewmodel-sprite";
+    knifeSprite.scale.set(1.4, 1.4, 1.4);
+    knifeSprite.position.set(0.08, -0.05, -0.3);
+    knifeSprite.renderOrder = 9999;
+    knifeSprite.frustumCulled = false;
+    knifeSprite.layers.set(VIEWMODEL_LAYER);
+    knifeSprite.userData.viewModel = true;
+    knifeSprite.userData.rayTraceIgnore = true;
+
+    viewmodel.add(knifeSprite);
+  },
+  undefined,
+  function(error) {
+    console.error("Error loading the knife image sprite:", error);
+  }
 );

@@ -1,50 +1,84 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Cloud Parkour Game</title>
-    <link rel="stylesheet" href="css/style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3D Cloud Parkour Game</title>
+  <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-   
-    <div id="score-ui" style="
-        position: absolute; 
-        top: 20px; 
-        left: 20px; 
-        font-family: sans-serif; 
-        font-size: 20px; 
-        line-height: 1.6; 
-        z-index: 10000;
-        background-color: rgba(0, 0, 0, 0.5); 
-        padding: 12px 20px; 
-        border-radius: 6px;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-    ">
-        <div style="color: #ffffff !important; font-weight: bold;">Score: <span id="score">0</span></div>
-        <div style="color: #60a5fa !important;">Previous Run: <span id="prev-score">0</span></div>
-        <div style="color: #00ff00 !important;">Best Score: <span id="best-score">0</span></div>
+  <div id="score-ui" class="hud-panel hud-panel-left">
+    <div class="score-row score-current">Score: <span id="score">0</span></div>
+    <div class="score-row score-previous">Previous Run: <span id="prev-score">0</span></div>
+    <div class="score-row score-best">Best Score: <span id="best-score">0</span></div>
+    <div class="score-row score-combo">Combo: <span id="combo-count">0x</span></div>
+    <div class="score-row score-nickname">Nickname: <span id="nickname-display">---</span></div>
+  </div>
+
+  <div id="right-hud" class="hud-panel hud-panel-right">
+    <div class="right-hud-section">
+      <div class="hud-title">TIME OF DAY</div>
+      <div id="time-of-day">--:--</div>
+      <div id="time-of-day-label">Waiting</div>
+      <div class="quality-readout">Quality: <span id="quality-display">High</span></div>
     </div>
-         
-    <div id="crosshair"></div>
-    <div id="ui">SPEED: <span id="speedo">0</span> u/s</div>
-    
-    <div id="menu">
-        <h1>CLOUD HOPPER</h1>
-        <p>Click anywhere to start jumping</p>
-        <p style="font-size: 14px; color: #ddd;">WASD to Move | SPACE to Jump | Mouse to Look</p>
+    <div class="right-hud-section top-runs-section">
+      <div class="hud-title leaderboard-title">TOP 10 RUNS <span id="leaderboard-status" class="leaderboard-status leaderboard-local">LOCAL</span></div>
+      <ol id="top-runs-list">
+        <li class="empty-run">No runs yet</li>
+      </ol>
     </div>
+  </div>
+
+  <div id="toast-message" aria-live="polite"></div>
+  <div id="performance-overlay" class="hidden"></div>
+  <div id="crosshair"></div>
+  <div id="ui">SPEED: <span id="speedo">0</span> u/s</div>
+
+  <div id="nickname-modal" class="modal-backdrop">
+    <div class="nickname-card">
+      <h2>Enter nickname</h2>
+      <p>This name will be used for the top 10 runs. Global results work after the leaderboard config is enabled.</p>
+      <input id="nickname-input" type="text" maxlength="16" autocomplete="off" placeholder="Nickname">
+      <button id="nickname-submit" type="button">Continue</button>
+      <div id="nickname-error" aria-live="polite"></div>
+    </div>
+  </div>
+
+  <div id="menu">
+    <h1>CLOUD HOPPER</h1>
+    <p id="menu-start-text">Enter a nickname to start</p>
+    <p class="controls-line">WASD to Move | SPACE to Jump | Mouse to Look</p>
+    <div class="menu-settings" onclick="event.stopPropagation()">
+      <label for="quality-select">Quality</label>
+      <select id="quality-select" aria-label="Quality preset">
+        <option value="low">Low</option>
+        <option value="medium">Medium</option>
+        <option value="high" selected>High</option>
+        <option value="ultra">Ultra</option>
+      </select>
+      <span class="debug-hint">F3 toggles debug stats</span>
+    </div>
+    <p class="gameplay-line">Special clouds: gold gives bonus score, blue boosts, grey crumbles, cyan pushes sideways.</p>
+  </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-
-	<script src="js/mountains.js"></script>
-	<script src="js/ocean.js"></script>
-
-	<script src="js/world.js"></script>
-	<script src="js/physics.js"></script>
-	<script src="js/input.js"></script>
-	<script src="js/viewmodel.js"></script>
-
-	<script src="js/main.js"></script>
+  <script src="js/settings.js"></script>
+  <script src="js/mountains.js"></script>
+  <script src="js/ocean.js"></script>
+  <script src="js/world.js"></script>
+  <script src="js/difficulty.js"></script>
+  <script src="js/clouds.js"></script>
+  <script src="js/environment.js"></script>
+  <script src="js/raytracing.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/leaderboard-config.js"></script>
+  <script src="js/leaderboard.js"></script>
+  <script src="js/performance.js"></script>
+  <script src="js/hud.js"></script>
+  <script src="js/physics.js"></script>
+  <script src="js/input.js"></script>
+  <script src="js/viewmodel.js"></script>
+  <script src="js/main.js"></script>
 </body>
 </html>

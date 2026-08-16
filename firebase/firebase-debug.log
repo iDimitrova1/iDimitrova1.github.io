@@ -1,0 +1,32 @@
+[debug] [2026-06-13T16:15:33.763Z] ----------------------------------------------------------------------
+[debug] [2026-06-13T16:15:33.766Z] Command:       /usr/local/bin/firebase /home/irina/.cache/firebase/tools/lib/node_modules/firebase-tools/lib/bin/firebase init
+[debug] [2026-06-13T16:15:33.766Z] CLI Version:   15.20.0
+[debug] [2026-06-13T16:15:33.766Z] Platform:      linux
+[debug] [2026-06-13T16:15:33.766Z] Node Version:  v20.18.2
+[debug] [2026-06-13T16:15:33.767Z] Time:          Sat Jun 13 2026 19:15:33 GMT+0300 (Eastern European Summer Time)
+[debug] [2026-06-13T16:15:33.767Z] ----------------------------------------------------------------------
+[debug] 
+[info] 
+     ######## #### ########  ######## ########     ###     ######  ########
+     ##        ##  ##     ## ##       ##     ##  ##   ##  ##       ##
+     ######    ##  ########  ######   ########  #########  ######  ######
+     ##        ##  ##    ##  ##       ##     ## ##     ##       ## ##
+     ##       #### ##     ## ######## ########  ##     ##  ######  ########
+
+You're about to initialize a Firebase project in this directory:
+
+  /home/irina/Documents/git/iDimitrova1.github.io/firebase
+
+[debug] [2026-06-13T17:04:07.264Z] ExitPromptError: User force closed the prompt with SIGINT
+    at Interface.sigint (/home/irina/.cache/firebase/tools/lib/node_modules/@inquirer/core/dist/commonjs/lib/create-prompt.js:101:37)
+    at Interface.emit (node:events:518:28)
+    at [_ttyWrite] [as _ttyWrite] (node:internal/readline/interface:1125:18)
+    at ReadStream.onkeypress (node:internal/readline/interface:264:20)
+    at ReadStream.emit (node:events:530:35)
+    at emitKeys (node:internal/readline/utils:371:14)
+    at emitKeys.next (<anonymous>)
+    at ReadStream.onData (node:internal/readline/emitKeypressEvents:64:36)
+    at ReadStream.emit (node:events:518:28)
+    at addChunk (node:internal/streams/readable:561:12)
+[error] 
+[error] Error: An unexpected error has occurred.
