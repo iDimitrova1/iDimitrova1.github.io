@@ -20,7 +20,7 @@ const OceanManager = {
         this.mesh.rotation.x = -Math.PI / 2;
         
         // FIX: The position assignment is now inside the function
-        this.mesh.position.y = 0; 
+        this.mesh.position.y = -7; 
         
         scene.add(this.mesh);
 
@@ -41,8 +41,8 @@ const OceanManager = {
             const z = posAttr.getZ(i);
             
             let y = this.originalY[i] + 
-                    (Math.sin(x * 0.005 + time * 0.8) * 100) + 
-                    (Math.cos(z * 0.006 + time * 0.5) * 100);
+                    (Math.sin(x * 0.05 + time * 2) * 5) + 
+                    (Math.cos(z * 0.06 + time * 2) * 5);
             
             if (isNaN(y)) y = this.originalY[i];
             

@@ -72,6 +72,7 @@ function animate() {
     if (typeof renderer !== 'undefined' && typeof scene !== 'undefined' && typeof camera !== 'undefined') {
         renderer.render(scene, camera);
     }
+    
 }
 
 /**

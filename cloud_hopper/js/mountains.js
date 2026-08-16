@@ -21,15 +21,15 @@ const MountainManager = {
     },
 
     manage: function(playerZ, scene) {
-        const spawnAhead = 1000;  // Increased render distance so you don't see them pop in
-        const deleteBehind = 150;
+        const spawnAhead = 600;  // Increased render distance so you don't see them pop in
+        const deleteBehind = 300;
 
         // 1. Generate Left Mountain Range
         while (this.leftLastZ > playerZ - spawnAhead) {
             const gap = 60 + Math.random() * 80; 
             this.leftLastZ -= gap;
             // PUSHED BACK: x is now between -160 and -260
-            this.spawn(-160 - Math.random() * 100, this.leftLastZ, scene);
+            this.spawn(-180 - Math.random() * 100, this.leftLastZ, scene);
         }
 
         // 2. Generate Right Mountain Range
@@ -37,7 +37,7 @@ const MountainManager = {
             const gap = 60 + Math.random() * 80;
             this.rightLastZ -= gap;
             // PUSHED BACK: x is now between 160 and 260
-            this.spawn(160 + Math.random() * 100, this.rightLastZ, scene);
+            this.spawn(180 + Math.random() * 100, this.rightLastZ, scene);
         }
 
         // 3. GPU Memory Protection
@@ -57,8 +57,8 @@ const MountainManager = {
         const topRadius = 5 + Math.random() * 20;    // The magic trick to cut off the pointy tip
         const height = 150 + Math.random() * 80;      // Slightly squatter heights
         
-        const radialSegments = 7 + Math.floor(Math.random() * 4); 
-        const heightSegments = 5 + Math.floor(Math.random() * 3); 
+        const radialSegments = 24 + Math.floor(Math.random() * 4); 
+        const heightSegments = 7 + Math.floor(Math.random() * 3); 
 
         // We use a Cylinder instead of a Cone to allow for the flat topRadius
         const geometry = new THREE.CylinderGeometry(topRadius, baseRadius, height, radialSegments, heightSegments);
@@ -70,7 +70,7 @@ const MountainManager = {
             
             // We only protect the very bottom base from moving, let the top get craggy!
             if (vy > -height / 2.1) {
-                const jitter = 18; // Slightly more aggressive jitter for the wider faces
+                const jitter = 9; // Slightly more aggressive jitter for the wider faces
                 
                 positions.setX(i, positions.getX(i) + (Math.random() - 0.5) * jitter);
                 positions.setZ(i, positions.getZ(i) + (Math.random() - 0.5) * jitter);
