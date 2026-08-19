@@ -1,11 +1,11 @@
 {
   "name": "Ganz Model Design",
   "short_name": "Ganz MD",
-  "description": "CNC фрезоване, прототипи, композитни изделия, SFX реквизит и интериорни елементи.",
+  "description": "3D фрезоване, вакуум формоване, композитни изделия, калъпи, прототипи, макети и интериор.",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#181818",
+  "theme_color": "#c53b2d",
   "icons": [
     {
       "src": "assets/icons/icon-192.png",
