@@ -11,29 +11,10 @@ const OceanManager = {
       : { oceanNormalInterval: 3 };
   },
 
-<<<<<<< HEAD
-        const oceanMat = new THREE.MeshStandardMaterial({ 
-            color: 0x1d4ed8, 
-            transparent: true,
-            opacity: 0.85,
-            roughness: 0.1, 
-            metalness: 0.4,
-            flatShading: false
-        });
-        
-        this.mesh = new THREE.Mesh(oceanGeo, oceanMat);
-        this.mesh.rotation.x = -Math.PI / 2;
-        
-        // FIX: The position assignment is now inside the function
-        this.mesh.position.y = -7; 
-        
-        scene.add(this.mesh);
-=======
   applyQuality: function() {
     const quality = this.getQuality();
     this.normalInterval = Math.max(1, Math.floor(quality.oceanNormalInterval || 3));
   },
->>>>>>> 2bf9c4a040d64daba0ce45b7630471450321015e
 
   init: function(scene) {
     this.applyQuality();
@@ -41,26 +22,6 @@ const OceanManager = {
     const existingOcean =
       typeof ocean !== "undefined" && ocean && ocean.isMesh ? ocean : null;
 
-<<<<<<< HEAD
-        const posAttr = this.mesh.geometry.attributes.position;
-        
-        for (let i = 0; i < posAttr.count; i++) {
-            const x = posAttr.getX(i);
-            const z = posAttr.getZ(i);
-            
-            let y = this.originalY[i] + 
-                    (Math.sin(x * 0.05 + time * 2) * 5) + 
-                    (Math.cos(z * 0.06 + time * 2) * 5);
-            
-            if (isNaN(y)) y = this.originalY[i];
-            
-            posAttr.setY(i, y);
-        }
-        
-        posAttr.needsUpdate = true;
-        this.mesh.geometry.computeVertexNormals();
-        this.mesh.position.z = playerZ;
-=======
     if (existingOcean) {
       this.mesh = existingOcean;
       this.mesh.scale.set(2.5, 2.5, 1);
@@ -78,7 +39,6 @@ const OceanManager = {
 
       this.mesh = new THREE.Mesh(oceanGeo, oceanMat);
       scene.add(this.mesh);
->>>>>>> 2bf9c4a040d64daba0ce45b7630471450321015e
     }
 
     this.mesh.rotation.x = -Math.PI / 2;

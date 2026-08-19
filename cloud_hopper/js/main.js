@@ -113,9 +113,6 @@ function animate() {
         AudioManager.update(cappedDelta, horizSpeed, velocity.y, !isGrounded && velocity.y < 0);
       }
     }
-<<<<<<< HEAD
-    
-=======
   }
 
   if (environmentInitialized && typeof yawObject !== "undefined") {
@@ -150,7 +147,6 @@ function animate() {
   if (performanceInitialized && typeof PerformanceMonitor !== "undefined") {
     PerformanceMonitor.update(cappedDelta);
   }
->>>>>>> 2bf9c4a040d64daba0ce45b7630471450321015e
 }
 
 function animateViewmodel(horizSpeed, delta) {
