@@ -19,8 +19,9 @@ function initSectionNavigation() {
   if (body.dataset.page !== 'home' || !('IntersectionObserver' in window)) return;
   const links = $$('.primary-nav a');
   const select = $('[data-mobile-menu]');
+  const documentBase = document.baseURI || window.location.href;
   const entries = links.map((link) => {
-    const url = new URL(link.href, window.location.href);
+    const url = new URL(link.getAttribute('href') || link.href, documentBase);
     return { link, hash: url.hash, section: url.hash ? $(url.hash) : null };
   }).filter((item) => item.section);
   if (!entries.length) return;
@@ -28,7 +29,7 @@ function initSectionNavigation() {
   const activate = (hash) => {
     entries.forEach(({ link, hash: linkHash }) => link.classList.toggle('is-current', linkHash === hash));
     if (select) {
-      const option = [...select.options].find((item) => new URL(item.value || window.location.href, window.location.href).hash === hash);
+      const option = [...select.options].find((item) => new URL(item.value || window.location.href, documentBase).hash === hash);
       if (option) select.value = option.value;
     }
   };
@@ -112,6 +113,11 @@ function initCarousel() {
     index = (nextIndex + slides.length) % slides.length;
     slides.forEach((slide, slideIndex) => {
       const active = slideIndex === index;
+      let offset = slideIndex - index;
+      const midpoint = slides.length / 2;
+      if (offset > midpoint) offset -= slides.length;
+      if (offset < -midpoint) offset += slides.length;
+      slide.style.setProperty('--slide-offset', String(offset));
       slide.classList.toggle('is-active', active);
       slide.setAttribute('aria-hidden', String(!active));
     });
@@ -127,7 +133,7 @@ function initCarousel() {
   const start = () => {
     stop();
     if (manuallyPaused || reducedMotion.matches || document.hidden) return;
-    timer = window.setInterval(() => show(index + 1), 5400);
+    timer = window.setInterval(() => show(index + 1), 4800);
   };
   const restart = () => { stop(); start(); };
 
@@ -154,27 +160,6 @@ function initCarousel() {
   document.addEventListener('visibilitychange', () => document.hidden ? stop() : start());
   reducedMotion.addEventListener?.('change', start);
   updatePause(); show(0); start();
-}
-
-function initTextSizing() {
-  const controls = $$('[data-font-size]');
-  const content = $('[data-readable-content]');
-  if (!controls.length || !content) return;
-  const scales = { small: 0.9, normal: 1, large: 1.12 };
-  let saved = 'normal';
-  try { saved = localStorage.getItem('ganz-font-size') || 'normal'; } catch {}
-  const apply = (size) => {
-    const safe = Object.hasOwn(scales, size) ? size : 'normal';
-    content.style.setProperty('--readable-scale', String(scales[safe]));
-    controls.forEach((button) => {
-      const active = button.dataset.fontSize === safe;
-      button.classList.toggle('is-active', active);
-      button.setAttribute('aria-pressed', String(active));
-    });
-    try { localStorage.setItem('ganz-font-size', safe); } catch {}
-  };
-  controls.forEach((button) => button.addEventListener('click', () => apply(button.dataset.fontSize || 'normal')));
-  apply(saved);
 }
 
 function initLightbox() {
@@ -219,29 +204,10 @@ function initLightbox() {
   });
 }
 
-function initContactForm() {
-  const form = $('#contact-form'); const status = $('#form-status');
-  if (!form || !status) return;
-  form.addEventListener('submit', (event) => {
-    event.preventDefault(); if (!form.reportValidity()) return;
-    const data = new FormData(form);
-    const name = String(data.get('name') || '').trim();
-    const email = String(data.get('email') || '').trim();
-    const subject = String(data.get('subject') || 'Запитване от ganz-md.com').trim();
-    const message = String(data.get('message') || '').trim();
-    const mailto = new URL('mailto:ganzmd@gmail.com');
-    mailto.searchParams.set('subject', subject);
-    mailto.searchParams.set('body', [`Име: ${name}`, `Е-mail за отговор: ${email}`, '', message].join('\n'));
-    status.textContent = 'Отваря се Вашият e-mail клиент с попълнено съобщение.';
-    window.location.href = mailto.toString();
-  });
-}
 
 setCurrentYear();
 initMobileNavigation();
 initSectionNavigation();
 initSideMenu();
 initCarousel();
-initTextSizing();
 initLightbox();
-initContactForm();
